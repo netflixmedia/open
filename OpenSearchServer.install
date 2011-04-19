@@ -1,0 +1,46 @@
+<?php 
+function OpenSearchServer_install() {
+     drupal_install_schema('annotate');
+     
+}
+function annotate_schema(){
+
+  $schema['OpenSearchServer'] = array(
+ 'description' => t('The base table for saved articles.'),
+ 'fields' => array(
+ 'serverurl' => array(
+ 'description' => t('The Server Url of OpenSearchServer.'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+  
+   'indexname' => array(
+ 'description' => t('The Index Name Of SearchServer Instant.'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+  
+   'username' => array(
+ 'description' => t('The username. for authentication'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+  
+ 'key' => array(
+ 'description' => t('The key for authetication.'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+ ),
+ );
+ 
+return $schema;
+
+}
+function OpenSearchServer__uninstall() {
+   drupal_uninstall_schema('annotate');
+}

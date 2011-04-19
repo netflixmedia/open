@@ -1,1 +1,5 @@
+; $Id$
 name = OpenSearchServer
+description = This is a simple module for OpenSearchServer
+core = 6.x
+package = OpenSearchServer

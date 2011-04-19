@@ -1,0 +1,181 @@
+<?php
+require 'OSS_API.class.php';
+require 'misc.lib.php';
+require 'OSS_IndexDocument.class.php';
+ function OpenSearchServer_perm() {
+  return array('access OpenSearchServer');
+}
+
+function OpenSearchServer_menu() {
+  $items = array();
+ $items['admin/settings/OpenSearchServer'] = array(
+    'title'              => 'OpenSearchServer Server Settings',
+    'description'        => 'Settings For OpenSearchServer Index path,Search Settings etc.',
+    'page callback'      => 'admin_Settings',
+    'page arguments'     => array('apachesolr_settings'),
+    'access callback'    => 'user_access',
+    'access arguments'   =>  array('access OpenSearchServer'),
+    
+  );
+   
+  $items['OpenSearchServer'] = array(
+    'title' => 'OpenSearchServer',
+    'description' => 'This is an OpenSearchServer Module',
+    'page callback' => 'OpenSearchServer_all',
+    'access arguments' => array('access OpenSearchServer'),
+    'type' => MENU_NORMAL_ITEM
+  );
+  return $items;
+}
+ 
+function admin_Settings() {
+ 
+ return drupal_get_form('admin_index_form');
+ 
+}
+function admin_index_form()
+{
+	 $details = db_query("SELECT * FROM {OpenSearchServer}");
+	$sdetails = db_fetch_object($details);
+	$form['serverurl'] = array(
+     '#type' => 'textfield',
+ 	 '#title' => t('Enter the OpenSearchServer URL'),
+ 	 '#default_value' => $sdetails->serverurl,
+	 
+   );
+   $form['indexname'] = array(
+     '#type' => 'textfield',
+ 	 '#title' => t('Enter the Indexname URL'),
+ 	 '#default_value' => $sdetails->indexname,
+   );
+   $form['username'] = array(
+     '#type' => 'textfield',
+ 	 '#title' => t('Enter the OpenSearchServer UserName for authentication'),
+ 	 '#default_value' => $sdetails->username,
+   );
+   $form['key'] = array(
+     '#type' => 'textfield',
+ 	 '#title' => t('Enter the OpenSearchServer key for authentication'),
+ 	 '#default_value' => $sdetails->key,
+   );
+ 
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save'),'#name'=>'save',);
+  $form['StartIndexing'] = array('#type' => 'submit', '#value' => t('Start Indexing'),'#name'=>'index');
+	return $form;
+}
+function admin_index_form_validate($form_id, &$form_state)
+{
+	 if($form_state['clicked_button']['#name']=='save') {
+    
+		 if (empty($form_state['values']['indexname'])) {
+			form_set_error('keywords', t('Please enter the Index Name.'));
+		  }
+		   if (empty($form_state['values']['serverurl'])) {
+			form_set_error('keywords', t('Please enter the Serverurl'));
+		  }
+		
+	}
+}
+function admin_index_form_submit($form_id, &$form_state)
+{
+ switch ($form_state['clicked_button']['#name']) {
+    case 'save':
+		$result = db_query("SELECT * FROM {OpenSearchServer}");
+		$count = $result->num_rows;
+		if($count==0)
+		{
+			$iname=$form_state['values']['indexname'];
+			db_query("INSERT INTO `{OpenSearchServer}` (`serverurl`, `indexname`, `username`, `key`) VALUES ('%s', '%s', '%s', '%s')", $form_state['values']['serverurl'], $form_state['values']['indexname'], $form_state['values']['username'], $form_state['values']['key']);
+			  $ossAPI = new OSS_API("http://localhost:8082");
+			  $ossAPI->createIndex($iname.'_content','WEB_CRAWLER');
+			  $ossAPI->createIndex($iname.'_users','WEB_CRAWLER');
+			  $ossAPI->createIndex($iname.'_comments','WEB_CRAWLER');
+		}
+		else
+		{
+			db_query("UPDATE `{OpenSearchServer}` SET `serverurl` = '%s',`indexname`='%s',`username`='%s',`key`='%s'",$form_state['values']['serverurl'],$form_state['values']['indexname'],$form_state['values']['username'],$form_state['values']['key']);
+		}
+		drupal_set_message(t('The Preference has been saved'));
+		break;
+	  case 'index':
+			   $batch = array ('operations' => array (),
+				'finished' => 'get_content_index_finished',
+				'title' => t('Processing'),
+				'init_message' => t('Starting ...'),
+				 'error_message' => t('An error occurred and some or all of the exports have failed.'),
+				);
+					$batch ['operations'] [] = array ('get_content_index', array ($node));
+
+					batch_set ($batch);
+					batch_process ('/admin/settings/OpenSearchServer');  
+				
+			break;
+		
+	 }
+	 
+}
+function get_content_index_finished()
+{
+drupal_set_message(t('Reindexed all records.'));
+}
+function get_content_index()
+{
+	global $base_url;
+ 
+ 	$result = db_query("SELECT * FROM {node_revisions}");
+	$getDetails = db_query("SELECT * FROM {OpenSearchServer}");
+	$serverDetails = db_fetch_object($getDetails);
+	$ossEnginePath  = configRequestValue('ossEnginePath', $serverDetails->serverurl, 'engineURL');
+	$ossEngineConnectTimeOut = configRequestValue('ossEngineConnectTimeOut', 5, 'engineConnectTimeOut');
+	$ossEngineIndex = configRequestValue('ossEngineIndex', $serverDetails->indexname.'_content', 'engineIndex');
+		
+		 while ($link = db_fetch_object($result)) {
+		 $index = new OSS_IndexDocument();
+		 $document = $index->newDocument('en');
+			$document->newField('url',	 $base_url.'/node/'.$link->nid);
+			$document->newField('title',	 $link->title);
+			$document->newField('content',		 $link->body);
+			 $server = new OSS_API($ossEnginePath, $ossEngineIndex);
+		if ($server->update($index) === false) {
+			$errors[] = 'failedToUpdate';
+		}
+		}
+	 
+}
+function OpenSearchServer_all() {
+ 
+ return drupal_get_form('OpenSearchServer_page_form');
+}
+function OpenSearchServer_page_form() {
+  
+   $form['basic']['inline'] = array('#prefix' => '<div class="container-inline">', '#suffix' => '</div>');
+   $form['basic']['inline']['q'] = array(
+    '#type' => 'textfield',
+    '#title' => '',
+    '#maxlength' => 255,
+  );
+ 
+  
+  $form['basic']['inline']['submit'] = array('#type' => 'submit', '#value' => t('Search'));
+
+  return $form;
+}
+
+function OpenSearchServer_page_form_submit($form_id, &$form_state) {
+  
+   $form_state['redirect'] = 'OpenSearchServer/search/'. $form_state['values']['q'];
+}
+ 
+function OpenSearchServer_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == "list") {
+    $block = array();
+    $block[0]["info"] = t('OpenSearchServer');
+    return $block;
+  }
+  elseif ($op == 'view') {
+    $block_content = 'OpenSearchServer';
+    $block['subject'] = 'OpenSearchServer';
+    $block['content'] = $block_content;
+    return $block;
+  }
+}
