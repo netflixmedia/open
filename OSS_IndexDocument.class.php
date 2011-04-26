@@ -36,6 +36,7 @@ class OSS_IndexDocument extends ArrayObject {
 	public function newDocument($language = '') {
 		$document = new OSS_IndexDocument_Document($this, $language);
 		$this->append($document);
+		
 		return $document;
 	}
 

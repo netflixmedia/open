@@ -35,7 +35,7 @@ if (!class_exists('OutOfRangeException')) { class OutOfRangeException extends Lo
  */
 class OSS_API {
 
-	const API_SELECT   = 'select';
+const API_SELECT   = 'select';
 	const API_UPDATE   = 'update';
 	const API_DELETE   = 'delete';
 	const API_OPTIMIZE = 'optimize';
@@ -44,6 +44,11 @@ class OSS_API {
 	const API_ENGINE   = 'engine';
 	const API_PATTERN  = 'pattern';
 	const API_SCHEMA   = 'schema';
+	const API_SEARCH_TEMPLATE='searchtemplate';
+	
+	const API_SEARCH_TEMPLATE_CREATE='create';
+	const API_SEARCH_TEMPLATE_SETRETURNFIELD='setreturnfield';
+	const API_SEARCH_TEMPLATE_SETSNIPPETFIELD='setsnippetfield';	
 	
 	const API_SCHEMA_INDEX_LIST		= 'indexList';
 	const API_SCHEMA_CREATE_INDEX	= 'createIndex';
@@ -52,6 +57,7 @@ class OSS_API {
 	const API_SCHEMA_DELETE_FIELD	= "deleteField";
 	
 	const INDEX_TEMPLATE_EMPTY	= 'empty_index';
+
 
 	/** @var int Default timeout (specified in seconds) for CURLOPT_TIMEOUT option. See curl documentation */
 	const DEFAULT_QUERY_TIMEOUT = 0;
@@ -437,13 +443,15 @@ class OSS_API {
 	 * @param string $index If provided, this index name is used in place of the one defined in the API instance
 	 * @return boolean
 	 */
-	public function setField($name, $analyzer = null, $stored = null, $indexed = null, $termVector = null, $index = null) {
+public function setField($name, $analyzer = null, $stored = null, $indexed = null, $termVector = null, $index = null,$default = null,$unique = null) {
 		$index = $index ? $index : $this->index;
 		$params = array("field.name" => $name);
 		if ($analyzer)   $params["field.analyzer"]   = $analyzer;
 		if ($stored)     $params["field.stored"]     = $stored;
 		if ($indexed)    $params["field.indexed"]    = $indexed;
 		if ($termVector) $params["field.termVector"] = $termVector;
+			if ($termVector) $params["field.default"] = $default;
+				if ($termVector) $params["field.unique"] = $unique;
 		
 		$return = $this->queryServerXML($this->getQueryURL(OSS_API::API_SCHEMA, $index, OSS_API::API_SCHEMA_SET_FIELD, $params));
 		
