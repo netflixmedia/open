@@ -2,7 +2,7 @@
 /*
  *  This file is part of Jaeksoft OpenSearchServer.
  *
- *  Copyright (C) 2008-2010 Emmanuel Keller / Jaeksoft
+ *  Copyright (C) 2008-2011 Emmanuel Keller / Jaeksoft
  *
  *  http://www.open-search-server.com
  *
@@ -40,7 +40,7 @@ class OSS_Paging {
 	
 	protected $rowsParameter;
 	protected $pageParameter;
-
+	const MAX_PAGE_TO_LINK=10;
 
 	/**
 	 * @param $result The data
@@ -83,7 +83,7 @@ class OSS_Paging {
 
 
 	public function compute() {
-		$this->resultFound   = (int)$this->oss_result->result['numFound'];
+		$this->resultFound   = ((int)$this->oss_result->result['numFound'] - (int)$this->oss_result->result['collapsedDocCount']);
 		$this->resultTime    = (float)$this->oss_result->result['time'] / 1000;
 		$this->resultRows    = (int)$this->oss_result->result['rows'];
 		$this->resultStart   = (int)$this->oss_result->result['start'];
@@ -92,19 +92,20 @@ class OSS_Paging {
 		$this->resultTotal  = ceil($this->resultFound / $this->resultRows);
 
 		if ($this->resultTotal > 1) {
-			$low  = $this->resultCurrentPage - (MAX_PAGE_TO_LINK / 2);
-			$high = $this->resultCurrentPage + (MAX_PAGE_TO_LINK / 2 - 1);
+			$low  = $this->resultCurrentPage - (OSS_Paging::MAX_PAGE_TO_LINK / 2);
+			$high = $this->resultCurrentPage + (OSS_Paging::MAX_PAGE_TO_LINK / 2 - 1);
 			if ($low < 0) {
 				$high += $low * -1;
 			}
 			if ($high > $this->resultTotal) {
+			
 				$low -= $high - $this->resultTotal;
 			}
 
 			$this->resultLow  = max($low, 0);
 			$this->resultHigh = min($this->resultTotal, $high);
-			$this->resultPrev = max($this->resultCurrentPage - MAX_PAGE_TO_LINK, 0);
-			$this->resultNext = min($this->resultCurrentPage + MAX_PAGE_TO_LINK, $this->resultTotal);
+			$this->resultPrev = max($this->resultCurrentPage - 1, 0);
+			$this->resultNext = min($this->resultCurrentPage + 1, $this->resultTotal);
 			$this->pageBaseURI = preg_replace('/&(?:'.$this->pageParameter.'|'.$this->rowsParameter.')=[\d]+/', '', $_SERVER['REQUEST_URI']).'&'.$this->rowsParameter.'='.$this->resultRows.'&'.$this->pageParameter.'=';
 		}
 	}
