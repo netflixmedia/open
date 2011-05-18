@@ -230,7 +230,7 @@ function admin_index_form_submit($form_id, &$form_state)
 		break;
 	  case 'index':
 	 
-			   /*$batch = array ('operations' => array (),
+			   $batch = array ('operations' => array (),
 				'finished' => 'get_content_index_finished',
 				'title' => t('Processing'),
 				'init_message' => t('Starting ...'),
@@ -239,8 +239,7 @@ function admin_index_form_submit($form_id, &$form_state)
 					$batch ['operations'] [] = array ('get_content_index', array ($node));
 
 					batch_set ($batch);
-					batch_process ('admin/settings/opensearchserver');  */
-					get_content_index();
+					batch_process ('admin/settings/opensearchserver'); 
 				  
 			break;
 		
