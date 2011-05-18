@@ -1,15 +1,15 @@
 <?php 
-function OpenSearchServer_install() {
+function opensearchserver_install() {
      drupal_install_schema('annotate');
      
 }
 function annotate_schema(){
 
-  $schema['OpenSearchServer'] = array(
+  $schema['opensearchserver'] = array(
  'description' => t('The base table for saved articles.'),
  'fields' => array(
  'serverurl' => array(
- 'description' => t('The Server Url of OpenSearchServer.'),
+ 'description' => t('The Server Url of opensearchserver.'),
  'type' => 'varchar',
  'length' => '255',
  'not null' => TRUE,
@@ -41,6 +41,6 @@ function annotate_schema(){
 return $schema;
 
 }
-function OpenSearchServer__uninstall() {
+function opensearchserver__uninstall() {
    drupal_uninstall_schema('annotate');
 }
