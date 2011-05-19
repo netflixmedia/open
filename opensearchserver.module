@@ -143,9 +143,10 @@ function admin_index_form_validate($form_id, &$form_state)
 		
 	}
 }
-function configure_OSS($url,$indexname)
+function configure_OSS($url,$indexname,$username,$key)
 {
 			  $ossAPI = new OSS_API($url);
+			    $ossAPI->credential($username,$key);
 			  $ossAPI->createIndex($indexname);
 			  
 	return true;
@@ -211,7 +212,7 @@ function admin_index_form_submit($form_id, &$form_state)
 		if($count==0)
 		{
 			$iname=$form_state['values']['indexname'];
-			if(configure_OSS($form_state['values']['serverurl'],$iname))
+			if(configure_OSS($form_state['values']['serverurl'],$iname),$form_state['values']['username'], $form_state['values']['key'])
 			{
 				setFields_OSS($form_state['values']['serverurl'],$iname,$form_state['values']['username'], $form_state['values']['key']);
 				db_query("INSERT INTO `{opensearchserver}` (`serverurl`, `indexname`, `username`, `key`) VALUES ('%s', '%s', '%s', '%s')", $form_state['values']['serverurl'], $form_state['values']['indexname'], $form_state['values']['username'], $form_state['values']['key']);
