@@ -146,8 +146,10 @@ function admin_index_form_validate($form_id, &$form_state)
 function configure_OSS($url,$indexname,$username,$key)
 {
 			  $ossAPI = new OSS_API($url);
-			    $ossAPI->credential($username,$key);
+			  $ossAPI->credential($username,$key);
 			  $ossAPI->createIndex($indexname);
+			  $ossAPI->optimize($indexname);
+			  $ossAPI->reload($indexname);
 			  
 	return true;
 }
@@ -201,6 +203,8 @@ function setFields_OSS($url,$indexname,$username,$key)
 			   $searchTemplate->setSnippetField("search","pages_content");
 			   $searchTemplate->setSnippetField("search","users_name");
 			   $searchTemplate->setSnippetField("search","users_email");
+			  $ossAPI->optimize($indexname);
+			  $ossAPI->reload($indexname);
 			   
 }
 function admin_index_form_submit($form_id, &$form_state)
