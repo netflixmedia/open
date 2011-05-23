@@ -209,14 +209,18 @@ function admin_index_form_submit($form_id, &$form_state)
     case 'save':
 		$result = db_query("SELECT * FROM {opensearchserver}");
 		$count = $result->num_rows;
-		if($count==0)
-		{
 			$indexname=$form_state['values']['indexname'];
 			$serverurl=$form_state['values']['serverurl'];
 			$username=$form_state['values']['username'];
 			$key=$form_state['values']['key'];
+		 $ossAPI = new OSS_API($url);
+		 $ossAPI->credential($username,$key);
+		if(!$ossAPI->isIndexAvailable)
+		{
+			db_query("TRUNCATE TABLE {opensearchserver}");
 			if(configure_OSS($serverurl,$indexname,$username, $key))
 			{
+			
 				setFields_OSS($serverurl,$indexname,$username, $key);
 				db_query("INSERT INTO `{opensearchserver}` (`serverurl`, `indexname`, `username`, `key`) VALUES ('%s', '%s', '%s', '%s')", $form_state['values']['serverurl'], $form_state['values']['indexname'], $form_state['values']['username'], $form_state['values']['key']);
 			}
@@ -241,7 +245,6 @@ function admin_index_form_submit($form_id, &$form_state)
 				 'error_message' => t('An error occurred and some or all of the exports have failed.'),
 				);
 					$batch ['operations'] [] = array ('get_content_index', array ($node));
-
 					batch_set ($batch);
 					batch_process ('admin/settings/opensearchserver'); 
 				  
