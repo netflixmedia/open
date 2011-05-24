@@ -112,7 +112,7 @@ function admin_index_form()
    );
    $form['indexname'] = array(
      '#type' => 'textfield',
- 	 '#title' => t('Enter the Indexname URL'),
+ 	 '#title' => t('Enter the Indexname '),
  	 '#default_value' => $sdetails->indexname,
    );
    $form['username'] = array(
@@ -207,15 +207,21 @@ function admin_index_form_submit($form_id, &$form_state)
 {
  switch ($form_state['clicked_button']['#name']) {
     case 'save':
-		$result = db_query("SELECT * FROM {opensearchserver}");
-		$count = $result->num_rows;
-			$indexname=$form_state['values']['indexname'];
-			$serverurl=$form_state['values']['serverurl'];
-			$username=$form_state['values']['username'];
-			$key=$form_state['values']['key'];
-		 $ossAPI = new OSS_API($url);
-		 $ossAPI->credential($username,$key);
-		if(!$ossAPI->isIndexAvailable)
+	
+		$indexname=$form_state['values']['indexname'];
+		$serverurl=$form_state['values']['serverurl'];
+		$username=$form_state['values']['username'];
+		$key=$form_state['values']['key'];
+		$ossAPI = new OSS_API($serverurl);
+		$ossAPI->credential($username,$key);
+		
+	if($ossAPI->isIndexAvailable($indexname))
+		{
+			
+			drupal_set_message(t('Index Already Exist'), 'error');
+			
+		}
+		else
 		{
 			db_query("TRUNCATE TABLE {opensearchserver}");
 			if(configure_OSS($serverurl,$indexname,$username, $key))
@@ -226,15 +232,12 @@ function admin_index_form_submit($form_id, &$form_state)
 			}
 			else
 			{
-				drupal_set_message(t('UnExpected Error Occurred'));
+				drupal_set_message(t('UnExpected Error Occurred'), 'error');
 			}
-			
+			drupal_set_message(t('The Preference has been saved'));
 		}
-		else
-		{
-			db_query("UPDATE `{opensearchserver}` SET `serverurl` = '%s',`indexname`='%s',`username`='%s',`key`='%s'",$form_state['values']['serverurl'],$form_state['values']['indexname'],$form_state['values']['username'],$form_state['values']['key']);
-		}
-		drupal_set_message(t('The Preference has been saved'));
+		
+		
 		break;
 	  case 'index':
 	 
