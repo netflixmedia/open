@@ -37,7 +37,21 @@ function annotate_schema(){
  'not null' => TRUE),
  ),
  );
+   $schema['opensearchserver_type'] = array(
+ 'description' => t('The base table for saved articles.'),
+ 'fields' => array(
  
+ 'type' => array(
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+  
+ 'enabled' => array(
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE)));
 return $schema;
 
 }

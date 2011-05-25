@@ -6,7 +6,9 @@ require 'OSS_Results.class.php';
 require 'OSS_Paging.class.php';
 require 'OSS_Search.class.php';
 require 'OSS_SearchTemplate.class.php';
- function opensearchserver_perm() {
+require 'oss_delete.class.php';
+
+function opensearchserver_perm() {
   return array('access opensearchserver');
 }
 
@@ -103,31 +105,80 @@ function opensearchserver_submit($form, &$form_state) {
 function admin_index_form()
 {
 	 $details = db_query("SELECT * FROM {opensearchserver}");
+	 $nodetype = db_query("SELECT DISTINCT* FROM {opensearchserver_type}");
+	 $result = db_query("SELECT name,type FROM {node_type}");
+    $form['details'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Fields to be Indexed'),
+	'#description' => t('Enable the Checkbox before Re-indexing '),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
 	$sdetails = db_fetch_object($details);
-	$form['serverurl'] = array(
+	$form['details']['serverurl'] = array(
      '#type' => 'textfield',
- 	 '#title' => t('Enter the OpenSearchServer URL'),
+ 	 '#title' => t('OpenSearchServer URL'),
+	  #description' => t('No Trailing Slash at last eg:http://example.com:8080 '),
  	 '#default_value' => $sdetails->serverurl,
 	 
    );
-   $form['indexname'] = array(
+   $form['details']['indexname'] = array(
      '#type' => 'textfield',
- 	 '#title' => t('Enter the Indexname '),
+ 	 '#title' => t('IndexName '),
+	 '#description' => t('Name of the OpenSearchServer Index '),
  	 '#default_value' => $sdetails->indexname,
    );
-   $form['username'] = array(
+   $form['details']['username'] = array(
      '#type' => 'textfield',
- 	 '#title' => t('Enter the OpenSearchServer UserName for authentication'),
+ 	 '#title' => t('UserName'),
+	 '#description' => t('The username of OpenSearchServer for authentication '),
  	 '#default_value' => $sdetails->username,
    );
-   $form['key'] = array(
+   $form['details']['key'] = array(
      '#type' => 'textfield',
- 	 '#title' => t('Enter the OpenSearchServer key for authentication'),
+ 	 '#title' => t('Key'),
+	 '#description' => t('The Key of OpenSearchServer for authentication '),
  	 '#default_value' => $sdetails->key,
    );
- 
-  $form['submit'] = array('#type' => 'submit', '#value' => t('Save'),'#name'=>'save',);
-  $form['StartIndexing'] = array('#type' => 'submit', '#value' => t('Start Indexing'),'#name'=>'index');
+   $form['fields'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Fields to be Indexed'),
+	'#description' => t('Enable the Checkbox before Re-indexing '),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $count = db_result(db_query("SELECT COUNT(*) FROM {opensearchserver_type}"));
+
+  if($count>0)
+  {
+  
+	  while ($types = db_fetch_object($nodetype)) 
+		{
+		
+		 $form['fields'][$types->type] = array(
+					 '#type' => 'checkbox',
+					 '#title' => t($types->type),
+					  '#default_value' => $types->enabled,
+				   );
+				     
+		}
+  }
+  else
+  {
+    while ($results = db_fetch_object($result)) 
+	{
+		  
+	    $form['fields'][$results->type] = array(
+					 '#type' => 'checkbox',
+					 '#title' => t($results->type),
+					  
+				   );
+   
+   }
+   }
+   
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Create-index / Save'),'#name'=>'save',);
+  $form['StartIndexing'] = array('#type' => 'submit', '#value' => t('Re-index site'),'#name'=>'index');
 	return $form;
 }
 function admin_index_form_validate($form_id, &$form_state)
@@ -157,51 +208,56 @@ function setFields_OSS($url,$indexname,$username,$key)
 			  $ossAPI = new OSS_API($url,$indexname);
 			  $ossAPI->credential($username,$key);
 			  $ossAPI->setField('id','','NO','YES','YES','','NO','YES');
-			  $ossAPI->setField('category','','NO','YES','YES','','NO','NO');
-			  $ossAPI->setField('pages_url','','NO','YES','YES','','NO','NO');
-			  $ossAPI->setField('pages_title','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
-			  $ossAPI->setField('pages_content','TextAnalyzer','compress','YES','positions_offsets','','YES','NO');
-			  $ossAPI->setField('comments_url','','NO','YES','YES','','NO','NO');
+			  $ossAPI->setField('type','','NO','YES','YES','','NO','NO');
+			  $ossAPI->setField('url','','NO','YES','YES','','NO','NO');
+			  $ossAPI->setField('title','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
+			  $ossAPI->setField('content','TextAnalyzer','compress','YES','positions_offsets','','YES','NO');
+			  $ossAPI->setField('timestamp','','NO','YES','YES','','NO','NO');
 			  $ossAPI->setField('comments_subject','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
 			  $ossAPI->setField('comments_comment','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
-			  $ossAPI->setField('users_url','','NO','YES','YES','','NO','NO');
-			  $ossAPI->setField('users_name','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
-			  $ossAPI->setField('users_Email','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
-	  
-			  $searchTemplate=new OSS_SearchTemplate($url,$indexname);
+			  $ossAPI->setField('user_name','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
+			  $ossAPI->setField('user_email','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
+	  		  $searchTemplate=new OSS_SearchTemplate($url,$indexname);
 			  $searchTemplate->credential($username,$key);
 			  $searchTemplate->createSearchTemplate("search",'
-			  comments_subject:($$)^10 OR comments_subject:("$$")^10
-					OR
-			comments_comment:($$)^10 OR comments_comment:("$$")^10
-			OR comments_url:($$)^5 OR
-			 comments_url:("$$")^5
-			OR
-			 users_name:($$)^10 OR users_name:("$$")^10
-					OR
-			users_email:($$)^10 OR users_email:("$$")^10
-			OR users_url:($$)^5 OR
-			 users_url:("$$")^5
-			OR
-			 pages_title:($$)^10 OR pages_title:("$$")^10
-					OR
-			pages_content:($$)^10 OR pages_content:("$$")^10
-			OR pages_url:($$)^5 OR
-			 pages_url:("$$")^5
+					title:($$)^10 OR title:("$$")^10
+							OR
+					content:($$)^10 OR conetent:("$$")^10
+							OR
+					user_name:($$)^10 OR user_name:("$$")^10
+							OR
+					user_email:($$)^10 OR user_email:("$$")^10
+							OR
+					comments_subject:($$)^10 OR comments_subject:("$$")^10
+									OR
+					comments_comment:($$)^10 OR comments_comment:("$$")^10
 			
 			 ',"AND","10","2","ENGLISH");
 			 
-			   $searchTemplate->setReturnField("search","category");
-			   $searchTemplate->setReturnField("search","pages_url");
-			   $searchTemplate->setReturnField("search","comments_url");
-			   $searchTemplate->setReturnField("search","users_url");
+			  
+			   $searchTemplate->setSnippetField("search","title");
+			   $searchTemplate->setSnippetField("search","content");
+			   $searchTemplate->setReturnField("search","url");
+			   $searchTemplate->setReturnField("search","type");
 			   $searchTemplate->setSnippetField("search","comments_comment");
 			   $searchTemplate->setSnippetField("search","comments_subject");
-			   $searchTemplate->setSnippetField("search","pages_title");
-			   $searchTemplate->setSnippetField("search","pages_content");
-			   $searchTemplate->setSnippetField("search","users_name");
-			   $searchTemplate->setSnippetField("search","users_email");
+			   $searchTemplate->setSnippetField("search","user_name");
+			   $searchTemplate->setSnippetField("search","user_email");
 			
+}
+function populate_db(&$form_state,$serverurl,$indexname,$username, $key)
+{
+				db_query("TRUNCATE TABLE {opensearchserver}");
+				db_query("TRUNCATE TABLE {opensearchserver_type}");
+				setFields_OSS($serverurl,$indexname,$username, $key);
+				db_query("INSERT INTO `{opensearchserver}` (`serverurl`, `indexname`, `username`, `key`) VALUES ('%s', '%s', '%s', '%s')", $form_state['values']['serverurl'], $form_state['values']['indexname'], $form_state['values']['username'], $form_state['values']['key']);
+				$types = db_query("SELECT DISTINCT type FROM {node_type}");
+				while ($type = db_fetch_object($types)) 
+				{
+					db_query("INSERT INTO `{opensearchserver_type}` (`type`, `enabled`) VALUES ('%s', '%s')",$type->type,$form_state['values'][$type->type]);
+				}
+			 
+				drupal_set_message(t('The Preferences has been Updated'));
 }
 function admin_index_form_submit($form_id, &$form_state)
 {
@@ -215,42 +271,19 @@ function admin_index_form_submit($form_id, &$form_state)
 		$ossAPI = new OSS_API($serverurl);
 		$ossAPI->credential($username,$key);
 		
-	if($ossAPI->isIndexAvailable($indexname))
+		if($ossAPI->isIndexAvailable($indexname))
 		{
-			
-			drupal_set_message(t('Index Already Exist'), 'error');
-			
+		
 		}
 		else
 		{
-			db_query("TRUNCATE TABLE {opensearchserver}");
-			if(configure_OSS($serverurl,$indexname,$username, $key))
-			{
-			
-				setFields_OSS($serverurl,$indexname,$username, $key);
-				db_query("INSERT INTO `{opensearchserver}` (`serverurl`, `indexname`, `username`, `key`) VALUES ('%s', '%s', '%s', '%s')", $form_state['values']['serverurl'], $form_state['values']['indexname'], $form_state['values']['username'], $form_state['values']['key']);
-			}
-			else
-			{
-				drupal_set_message(t('UnExpected Error Occurred'), 'error');
-			}
-			drupal_set_message(t('The Preference has been saved'));
+			configure_OSS($serverurl,$indexname,$username, $key);
 		}
-		
+		populate_db(&$form_state,$serverurl,$indexname,$username, $key);
 		
 		break;
 	  case 'index':
-	 
-			   $batch = array ('operations' => array (),
-				'finished' => 'get_content_index_finished',
-				'title' => t('Processing'),
-				'init_message' => t('Starting ...'),
-				 'error_message' => t('An error occurred and some or all of the exports have failed.'),
-				);
-					$batch ['operations'] [] = array ('get_content_index', array ($node));
-					batch_set ($batch);
-					batch_process ('admin/settings/opensearchserver'); 
-				  
+	   	  get_content_index(&$form_state);
 			break;
 		
 	 }
@@ -260,78 +293,98 @@ function get_content_index_finished()
 {
 drupal_set_message(t('Reindexed all records.'));
 }
-function get_content_index()
+function get_content_index(&$form_state)
 {
-	 
+	
 	global $base_url,$url,$uurl,$curl;
 	global $base_root;
 	$path=parse_url($base_root . request_uri());
-		if($path[query])
-		{
-			$url=$base_url.'/?q=node/';
-			$uurl=$base_url.'/?q=user/';
-			 
-		}
-		else
-		{
-			$url=$base_url.'/node/';
-			$uurl=$base_url.'/user/';
-		}
-		 
-  	$result = db_query("SELECT * FROM {node_revisions}");
-	$resultUser = db_query("SELECT * FROM {users}");
-	$resultComment= db_query("SELECT * FROM {comments}");
-	$getDetails = db_query("SELECT * FROM {opensearchserver}");
-	$serverDetails = db_fetch_object($getDetails);
-	
-	$ossEnginePath  = configRequestValue('ossEnginePath', $serverDetails->serverurl, 'engineURL');
-	$ossEngineConnectTimeOut = configRequestValue('ossEngineConnectTimeOut', 5, 'engineConnectTimeOut');
-	$ossEngineIndex = configRequestValue('ossEngineIndex', $serverDetails->indexname, 'engineIndex');
-	
-		 $index = new OSS_IndexDocument();
-	 	 while ($user = db_fetch_object($resultUser)) {
-		 	$document = $index->newDocument('en');
-			$document->newField('id', 'users_'.$user->uid);
-			$document->newField('category', 'users');
-			$document->newField('users_url',$uurl.$user->uid);
-			$document->newField('users_name',$user->name);
-			$document->newField('users_mail',$user->mail);
-			$server = new OSS_API($ossEnginePath, $ossEngineIndex);
-			$server->credential($serverDetails->username, $serverDetails->key);
-		if ($server->update($index,$ossEngineIndex) === false) {
-			$errors[] = 'failedToUpdate';
-		 }
-		}
-		  $index = new OSS_IndexDocument();
-	 	 while ($comment = db_fetch_object($resultComment)) {
+		$getDetails = db_query("SELECT * FROM {opensearchserver}");
+		$serverDetails = db_fetch_object($getDetails);
+  		$ossEnginePath  = configRequestValue('ossEnginePath', $serverDetails->serverurl, 'engineURL');
+		$ossEngineConnectTimeOut = configRequestValue('ossEngineConnectTimeOut', 5, 'engineConnectTimeOut');
+		$ossEngineIndex = configRequestValue('ossEngineIndex', $serverDetails->indexname, 'engineIndex');
+		$deleteAPI = new oss_delete($serverDetails->serverurl,$serverDetails->indexname);
+		$deleteAPI->credential($serverDetails->username,$serverDetails->key);
+		$deleteAPI->delete('*:*');
+			if($path[query])
+			{
+				$url=$base_url.'/?q=node/';
+				$uurl=$base_url.'/?q=user/';
+				 
+			}
+			else
+			{
+				$url=$base_url.'/node/';
+				$uurl=$base_url.'/user/';
+			}
 		
-			$document = $index->newDocument('en');
-		   	$document->newField('id', 'comments_'.$comment->cid);
-			$document->newField('category', 'comments');
-			$document->newField('comments_url',	 $url.$comment->nid.'#comment-'.$comment->cid);
-			$document->newField('comments_subject',	 $comment->subject);
-			$document->newField('comments_comment',		 $comment->comment);
-			 $server = new OSS_API($ossEnginePath, $ossEngineIndex);
-			 		$server->credential($serverDetails->username, $serverDetails->key);
-		if ($server->update($index,$ossEngineIndex) === false) {
-			$errors[] = 'failedToUpdate';
+		  $types = db_query("SELECT DISTINCT name,type FROM {node_type}");
+		  while ($type = db_fetch_object($types)) 
+		  {
+			 
+			if($form_state['values'][$type->type]==1)
+			{
+				
+			$result = db_query('SELECT node.type,node.nid,node.comment,node.status, node_revisions.uid,node_revisions.title,node_revisions.body,node_revisions.timestamp
+							FROM {node}, {node_revisions}
+							WHERE node.nid = node_revisions.nid AND node.type LIKE'."'".$type->type."'");
+						 
+			$index = new OSS_IndexDocument();
+			while ($resultdoc = db_fetch_object($result)) 
+				{
+		
+		
+					  
+					 if($resultdoc->status==1)
+					 {
+								$getusers = db_query("SELECT name, mail FROM {users} WHERE uid = ".$resultdoc->uid);
+								$userdetails = db_fetch_object($getusers);
+								$document = $index->newDocument('en');
+								$document->newField('id', $resultdoc->type.'_'.$resultdoc->nid);
+								$document->newField('type', $resultdoc->type);
+								$document->newField('title', $resultdoc->title);
+								$document->newField('content', $resultdoc->body);
+								$document->newField('url', $url.$resultdoc->nid);
+								$document->newField('timestamp', $resultdoc->timestamp);
+								$document->newField('user_name',$userdetails->name);
+								$document->newField('user_email',$userdetails->mail);
+								$server = new OSS_API($ossEnginePath, $ossEngineIndex);
+								$server->credential($serverDetails->username, $serverDetails->key);
+							if ($server->update($index,$ossEngineIndex) === false) {
+								$errors[] = 'failedToUpdate';
+							 }
+							 if($resultdoc->comment>0)
+							 {
+									$comments = db_query("SELECT cid, nid,subject,timestamp,comment FROM {comments} WHERE nid = ".$resultdoc->nid);
+								  while ($commentdoc = db_fetch_object($comments)) 
+									{
+									
+											$document = $index->newDocument('en');
+											$document->newField('id', 'comment_'.$commentdoc->cid);
+											$document->newField('type','comments');
+											$document->newField('comments_subject', $commentdoc->subject);
+											$document->newField('comments_comment', $commentdoc->comment);
+											$document->newField('url', $url.$resultdoc->nid.'#comment-'.$commentdoc->cid);
+											$document->newField('timestamp', $commentdoc->timestamp);
+											$document->newField('user_name',$userdetails->name);
+											$document->newField('user_email',$userdetails->mail);
+											$server = new OSS_API($ossEnginePath, $ossEngineIndex);
+											$server->credential($serverDetails->username, $serverDetails->key);
+										if ($server->update($index,$ossEngineIndex) === false) {
+											$errors[] = 'failedToUpdate';
+										 }
+								 }
+							 }
+				 
+						}
+						}
+						
 		 }
-		} 
-	  	 $index = new OSS_IndexDocument();
-		 while ($link = db_fetch_object($result)) {
-		    $document = $index->newDocument('en');
-			$document->newField('id', 'pages_'.$link->nid);
-			$document->newField('category', 'pages');
-			$document->newField('pages_url',$url.$link->nid);
-			$document->newField('pages_title',$link->title);
-			$document->newField('pages_content',$link->body);
-			 $server = new OSS_API($ossEnginePath, $ossEngineIndex);
-			 		$server->credential($serverDetails->username, $serverDetails->key);
-		if ($server->update($index,$ossEngineIndex) === false) {
-			$errors[] = 'failedToUpdate';
-		 }
-		} 
+				 }
+		  drupal_set_message('<pre>'. print_r('Re-indexing has been finished.', true) .'</pre>');
 }
+
 function opensearchserver_all() {
 	$arg = arg(NULL, $_GET['q']);
 	$result=getSearchResult($arg[2]);
@@ -346,37 +399,27 @@ function opensearchserver_all() {
 		$max = ($ossResults->getResultStart() + $ossResults->getResultRows() > $ossResults->getResultFound()) ? $ossResults->getResultFound() : $ossResults->getResultStart() + $ossResults->getResultRows();
 		//Documents iteration
 		for ($i = $ossResults->getResultStart(); $i < $max; $i++) {
-			$category	 = stripslashes($ossResults->getField($i, 'category', true));
-			if($category=="pages")
-			{
-				$title	 = stripslashes($ossResults->getField($i, 'pages_title', true));
-				$content = stripslashes($ossResults->getField($i, 'pages_content', true));
-				$url = stripslashes($ossResults->getField($i, 'pages_url', false));
-				$cont.='<p>';
-				$cont.='<a href="'.$url.'">'.$title.'</a><br/>';
-				$cont.=$content.'<br/>';
-				$cont.='<a href='.$url.'>'.$url.'</a><br/>';
-				$cont.='</p>';
-			}
-			else if($category=="users")
-			{
-				$name = stripslashes($ossResults->getField($i, 'users_name', true));
-				$email = stripslashes($ossResults->getField($i, 'users_email', true));
-				$url = stripslashes($ossResults->getField($i, 'users_url', false));
-				$cont.='<p>';
-				$cont.='<a href="'.$url.'">'.$name.'</a><br/>';
-				$cont.=$email.'<br/>';
-				$cont.='<a href='.$url.'>'.$url.'</a><br/>';
-				$cont.='</p>';
-			}
-			else if($category=="comments")
+			$category	 = stripslashes($ossResults->getField($i, 'type', true));
+			 
+			if($category=="comments")
 			{
 				$subject = stripslashes($ossResults->getField($i, 'comments_subject', true));
 				$comment = stripslashes($ossResults->getField($i, 'comments_comment', true));
-				$url = stripslashes($ossResults->getField($i, 'comments_url', false));
+				$url = stripslashes($ossResults->getField($i, 'url', false));
 				$cont.='<p>';
 				$cont.='<a href="'.$url.'">'.$subject.'</a><br/>';
 				$cont.=$comment.'<br/>';
+				$cont.='<a href='.$url.'>'.$url.'</a><br/>';
+				$cont.='</p>';
+			}
+			else
+			{
+			$title	 = stripslashes($ossResults->getField($i, 'title', true));
+				$content = stripslashes($ossResults->getField($i, 'content', true));
+				$url = stripslashes($ossResults->getField($i, 'url', false));
+				$cont.='<p>';
+				$cont.='<a href="'.$url.'">'.$title.'</a><br/>';
+				$cont.=$content.'<br/>';
 				$cont.='<a href='.$url.'>'.$url.'</a><br/>';
 				$cont.='</p>';
 			}
