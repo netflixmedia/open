@@ -15,7 +15,7 @@ function opensearchserver_perm() {
 function opensearchserver_menu() {
   $items = array();
  $items['admin/settings/opensearchserver'] = array(
-    'title'              => 'OpenSearchServer Server Settings',
+    'title'              => 'OpenSearchServer',
     'description'        => 'Settings For OpenSearchServer Index path,Search Settings etc.',
     'page callback'      => 'admin_Settings',
     'page arguments'     => array('opensearchserver_settings'),
@@ -102,6 +102,7 @@ function opensearchserver_submit($form, &$form_state) {
 	}
     
 }
+
 function admin_index_form()
 {
 	 $details = db_query("SELECT * FROM {opensearchserver}");
@@ -109,8 +110,8 @@ function admin_index_form()
 	 $result = db_query("SELECT name,type FROM {node_type}");
     $form['details'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Fields to be Indexed'),
-	'#description' => t('Enable the Checkbox before Re-indexing '),
+    '#title' => t('Settings'),
+	
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
@@ -118,7 +119,7 @@ function admin_index_form()
 	$form['details']['serverurl'] = array(
      '#type' => 'textfield',
  	 '#title' => t('OpenSearchServer URL'),
-	  #description' => t('No Trailing Slash at last eg:http://example.com:8080 '),
+	 '#description' => t('No Trailing Slash at last eg:http://example.com:8080 '),
  	 '#default_value' => $sdetails->serverurl,
 	 
    );
@@ -163,6 +164,7 @@ function admin_index_form()
 				     
 		}
   }
+ 
   else
   {
     while ($results = db_fetch_object($result)) 
@@ -176,6 +178,16 @@ function admin_index_form()
    
    }
    }
+     $form['fields']['delay'] = array(
+        '#type' => 'select',
+        '#title' => 'Select the Indexing interval (in minutes)',
+        '#options' => array(
+            15 => t('15'),
+            30 => t('30'),
+            60 => t('60'),        
+        ),
+		 '#default_value' => $sdetails->delay,
+    );
    
   $form['submit'] = array('#type' => 'submit', '#value' => t('Create-index / Save'),'#name'=>'save',);
   $form['StartIndexing'] = array('#type' => 'submit', '#value' => t('Re-index site'),'#name'=>'index');
@@ -217,6 +229,7 @@ function setFields_OSS($url,$indexname,$username,$key)
 			  $ossAPI->setField('comments_comment','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
 			  $ossAPI->setField('user_name','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
 			  $ossAPI->setField('user_email','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
+			  $ossAPI->setField('user_url','','NO','YES','YES','','NO','NO');
 	  		  $searchTemplate=new OSS_SearchTemplate($url,$indexname);
 			  $searchTemplate->credential($username,$key);
 			  $searchTemplate->createSearchTemplate("search",'
@@ -238,6 +251,7 @@ function setFields_OSS($url,$indexname,$username,$key)
 			   $searchTemplate->setSnippetField("search","title");
 			   $searchTemplate->setSnippetField("search","content");
 			   $searchTemplate->setReturnField("search","url");
+			   $searchTemplate->setReturnField("search","user_url");
 			   $searchTemplate->setReturnField("search","type");
 			   $searchTemplate->setSnippetField("search","comments_comment");
 			   $searchTemplate->setSnippetField("search","comments_subject");
@@ -250,7 +264,7 @@ function populate_db(&$form_state,$serverurl,$indexname,$username, $key)
 				db_query("TRUNCATE TABLE {opensearchserver}");
 				db_query("TRUNCATE TABLE {opensearchserver_type}");
 				setFields_OSS($serverurl,$indexname,$username, $key);
-				db_query("INSERT INTO `{opensearchserver}` (`serverurl`, `indexname`, `username`, `key`) VALUES ('%s', '%s', '%s', '%s')", $form_state['values']['serverurl'], $form_state['values']['indexname'], $form_state['values']['username'], $form_state['values']['key']);
+				db_query("INSERT INTO `{opensearchserver}` (`serverurl`, `indexname`, `username`, `key`,`last_indexed`,`delay`) VALUES ('%s', '%s', '%s', '%s', '%s', '%s')", $form_state['values']['serverurl'], $form_state['values']['indexname'], $form_state['values']['username'], $form_state['values']['key'],'',$form_state['values']['delay']);
 				$types = db_query("SELECT DISTINCT type FROM {node_type}");
 				while ($type = db_fetch_object($types)) 
 				{
@@ -271,11 +285,7 @@ function admin_index_form_submit($form_id, &$form_state)
 		$ossAPI = new OSS_API($serverurl);
 		$ossAPI->credential($username,$key);
 		
-		if($ossAPI->isIndexAvailable($indexname))
-		{
-		
-		}
-		else
+		if(!$ossAPI->isIndexAvailable($indexname))
 		{
 			configure_OSS($serverurl,$indexname,$username, $key);
 		}
@@ -283,20 +293,38 @@ function admin_index_form_submit($form_id, &$form_state)
 		
 		break;
 	  case 'index':
-	   	  get_content_index(&$form_state);
+	   	  get_content_index();
 			break;
 		
 	 }
 	 
 }
-function get_content_index_finished()
-{
-drupal_set_message(t('Reindexed all records.'));
+function opensearchserver_cron() {
+		$getDetails = db_query("SELECT * FROM {opensearchserver}");
+		$serverDetails = db_fetch_object($getDetails);
+		$from_time =strtotime(date( 'Y-m-d H:i:s', strtotime($serverDetails->last_indexed)));
+		$to_time=strtotime(date('Y-m-d H:i:s', time()));
+		$delay=round(abs($to_time - $from_time) / 60);
+		if($delay > $serverDetails->delay)
+		{
+			db_query("UPDATE `{opensearchserver}` SET `last_indexed` = ".date('YmdHis', time())." WHERE `serverurl` = "."'".$serverDetails->serverurl."'");
+			get_content_index();
+		}
+		if(!$serverDetails->last_indexed)
+		{
+			db_query("UPDATE `{opensearchserver}` SET `last_indexed` = ".date('YmdHis', time())." WHERE `serverurl` = "."'".$serverDetails->serverurl."'");
+			get_content_index();
+		}
+		
+	
+	
+	
 }
-function get_content_index(&$form_state)
+
+function get_content_index()
 {
 	
-	global $base_url,$url,$uurl,$curl;
+	global $base_url,$url,$user_url;
 	global $base_root;
 	$path=parse_url($base_root . request_uri());
 		$getDetails = db_query("SELECT * FROM {opensearchserver}");
@@ -310,27 +338,27 @@ function get_content_index(&$form_state)
 			if($path[query])
 			{
 				$url=$base_url.'/?q=node/';
-				$uurl=$base_url.'/?q=user/';
+				$user_url=$base_url.'/?q=user/';
 				 
 			}
 			else
 			{
 				$url=$base_url.'/node/';
-				$uurl=$base_url.'/user/';
+				$user_url=$base_url.'/user/';
 			}
 		
-		  $types = db_query("SELECT DISTINCT name,type FROM {node_type}");
+		  $types = db_query("SELECT DISTINCT type,enabled FROM {opensearchserver_type}");
 		  while ($type = db_fetch_object($types)) 
 		  {
 			 
-			if($form_state['values'][$type->type]==1)
+			if($type->enabled==1)
 			{
 				
 			$result = db_query('SELECT node.type,node.nid,node.comment,node.status, node_revisions.uid,node_revisions.title,node_revisions.body,node_revisions.timestamp
 							FROM {node}, {node_revisions}
 							WHERE node.nid = node_revisions.nid AND node.type LIKE'."'".$type->type."'");
 						 
-			$index = new OSS_IndexDocument();
+		 $index = new OSS_IndexDocument();
 			while ($resultdoc = db_fetch_object($result)) 
 				{
 		
@@ -338,7 +366,7 @@ function get_content_index(&$form_state)
 					  
 					 if($resultdoc->status==1)
 					 {
-								$getusers = db_query("SELECT name, mail FROM {users} WHERE uid = ".$resultdoc->uid);
+								$getusers = db_query("SELECT name, mail,uid FROM {users} WHERE uid = ".$resultdoc->uid);
 								$userdetails = db_fetch_object($getusers);
 								$document = $index->newDocument('en');
 								$document->newField('id', $resultdoc->type.'_'.$resultdoc->nid);
@@ -349,12 +377,14 @@ function get_content_index(&$form_state)
 								$document->newField('timestamp', $resultdoc->timestamp);
 								$document->newField('user_name',$userdetails->name);
 								$document->newField('user_email',$userdetails->mail);
+								$document->newField('user_url',$user_url.$userdetails->uid);
 								$server = new OSS_API($ossEnginePath, $ossEngineIndex);
 								$server->credential($serverDetails->username, $serverDetails->key);
 							if ($server->update($index,$ossEngineIndex) === false) {
 								$errors[] = 'failedToUpdate';
 							 }
-							 if($resultdoc->comment>0)
+							 
+							 if($resultdoc->comment > 0)
 							 {
 									$comments = db_query("SELECT cid, nid,subject,timestamp,comment FROM {comments} WHERE nid = ".$resultdoc->nid);
 								  while ($commentdoc = db_fetch_object($comments)) 
@@ -369,6 +399,7 @@ function get_content_index(&$form_state)
 											$document->newField('timestamp', $commentdoc->timestamp);
 											$document->newField('user_name',$userdetails->name);
 											$document->newField('user_email',$userdetails->mail);
+											$document->newField('user_url',$user_url.$userdetails->uid);
 											$server = new OSS_API($ossEnginePath, $ossEngineIndex);
 											$server->credential($serverDetails->username, $serverDetails->key);
 										if ($server->update($index,$ossEngineIndex) === false) {
@@ -381,8 +412,7 @@ function get_content_index(&$form_state)
 						}
 						
 		 }
-				 }
-		  drupal_set_message('<pre>'. print_r('Re-indexing has been finished.', true) .'</pre>');
+		 }
 }
 
 function opensearchserver_all() {
@@ -405,22 +435,28 @@ function opensearchserver_all() {
 			{
 				$subject = stripslashes($ossResults->getField($i, 'comments_subject', true));
 				$comment = stripslashes($ossResults->getField($i, 'comments_comment', true));
+				$user = stripslashes($ossResults->getField($i, 'user_name', true));
+				$user_url = stripslashes($ossResults->getField($i, 'user_url', true));
+				$type = stripslashes($ossResults->getField($i, 'type', true));
 				$url = stripslashes($ossResults->getField($i, 'url', false));
 				$cont.='<p>';
 				$cont.='<a href="'.$url.'">'.$subject.'</a><br/>';
 				$cont.=$comment.'<br/>';
-				$cont.='<a href='.$url.'>'.$url.'</a><br/>';
+				$cont.='<a href='.$url.'>'.$url.'</a>&nbsp;&nbsp;&nbsp;&nbsp;'.$type.' by <a href='.$user_url.'>'.$user.'</a><br/>';
 				$cont.='</p>';
 			}
 			else
 			{
-			$title	 = stripslashes($ossResults->getField($i, 'title', true));
+				$title	 = stripslashes($ossResults->getField($i, 'title', true));
 				$content = stripslashes($ossResults->getField($i, 'content', true));
+				$user = stripslashes($ossResults->getField($i, 'user_name', true));
+				$user_url = stripslashes($ossResults->getField($i, 'user_url', true));
+				$type = stripslashes($ossResults->getField($i, 'type', true));
 				$url = stripslashes($ossResults->getField($i, 'url', false));
 				$cont.='<p>';
 				$cont.='<a href="'.$url.'">'.$title.'</a><br/>';
 				$cont.=$content.'<br/>';
-				$cont.='<a href='.$url.'>'.$url.'</a><br/>';
+				$cont.='<a href='.$url.'>'.$url.'</a>&nbsp;&nbsp;&nbsp;&nbsp;'.$type.' by <a href='.$user_url.'>'.$user.'</a><br/>';
 				$cont.='</p>';
 			}
 			

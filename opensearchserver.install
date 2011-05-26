@@ -35,6 +35,20 @@ function annotate_schema(){
  'length' => '255',
  'not null' => TRUE,
  'not null' => TRUE),
+ 
+  'last_indexed' => array(
+ 'description' => t('The last indexed timestamp.'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+ 
+  'delay' => array(
+ 'description' => t('The indexing delay.'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
  ),
  );
    $schema['opensearchserver_type'] = array(
@@ -46,12 +60,13 @@ function annotate_schema(){
  'length' => '255',
  'not null' => TRUE,
  'not null' => TRUE),
-  
+
  'enabled' => array(
  'type' => 'varchar',
  'length' => '255',
  'not null' => TRUE,
  'not null' => TRUE)));
+ 
 return $schema;
 
 }

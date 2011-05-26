@@ -472,6 +472,7 @@ public function setField($name, $analyzer = null, $stored = null, $indexed = nul
 	public static function queryServer($url, $data = null, $connexionTimeout = OSS_API::DEFAULT_CONNEXION_TIMEOUT, $timeout = OSS_API::DEFAULT_QUERY_TIMEOUT) {
 		
 		// Use CURL to post the data
+		
 		$rCurl = curl_init($url);
 		curl_setopt($rCurl, CURLOPT_HTTP_VERSION, '1.0');
 		curl_setopt($rCurl, CURLOPT_BINARYTRANSFER, true);
