@@ -1,4 +1,5 @@
 <?php
+
 require 'OSS_API.class.php';
 require 'misc.lib.php';
 require 'OSS_IndexDocument.class.php';
@@ -16,7 +17,7 @@ function opensearchserver_menu() {
   $items = array();
  $items['admin/settings/opensearchserver'] = array(
     'title'              => 'OpenSearchServer',
-    'description'        => 'Settings For OpenSearchServer Index path,Search Settings etc.',
+    'description'        => 'Settings to access the OpenSearchServer instance from drupal.',
     'page callback'      => 'admin_Settings',
     'page arguments'     => array('opensearchserver_settings'),
     'access callback'    => 'user_access',
@@ -31,6 +32,7 @@ function opensearchserver_menu() {
     'access arguments' => array('access opensearchserver'),
     'type' => MENU_NORMAL_ITEM
   );
+  
   return $items;
 }
  
@@ -235,7 +237,7 @@ function setFields_OSS($url,$indexname,$username,$key)
 			  $searchTemplate->createSearchTemplate("search",'
 					title:($$)^10 OR title:("$$")^10
 							OR
-					content:($$)^10 OR conetent:("$$")^10
+					content:($$)^10 OR content:("$$")^10
 							OR
 					user_name:($$)^10 OR user_name:("$$")^10
 							OR
@@ -316,11 +318,16 @@ function opensearchserver_cron() {
 			get_content_index();
 		}
 		
-	
+					
 	
 	
 }
-
+function get_optimize($url,$username,$password)
+{
+				$api = new OSS_API($url);
+						$api->credential($username,$password);
+						$api->optimize();
+}
 function get_content_index()
 {
 	
@@ -332,6 +339,7 @@ function get_content_index()
   		$ossEnginePath  = configRequestValue('ossEnginePath', $serverDetails->serverurl, 'engineURL');
 		$ossEngineConnectTimeOut = configRequestValue('ossEngineConnectTimeOut', 5, 'engineConnectTimeOut');
 		$ossEngineIndex = configRequestValue('ossEngineIndex', $serverDetails->indexname, 'engineIndex');
+	
 		$deleteAPI = new oss_delete($serverDetails->serverurl,$serverDetails->indexname);
 		$deleteAPI->credential($serverDetails->username,$serverDetails->key);
 		$deleteAPI->delete('*:*');
@@ -380,10 +388,11 @@ function get_content_index()
 								$document->newField('user_url',$user_url.$userdetails->uid);
 								$server = new OSS_API($ossEnginePath, $ossEngineIndex);
 								$server->credential($serverDetails->username, $serverDetails->key);
+							
 							if ($server->update($index,$ossEngineIndex) === false) {
 								$errors[] = 'failedToUpdate';
 							 }
-							 
+							 	$server->optimize();
 							 if($resultdoc->comment > 0)
 							 {
 									$comments = db_query("SELECT cid, nid,subject,timestamp,comment FROM {comments} WHERE nid = ".$resultdoc->nid);
@@ -405,29 +414,50 @@ function get_content_index()
 										if ($server->update($index,$ossEngineIndex) === false) {
 											$errors[] = 'failedToUpdate';
 										 }
+										 $server->optimize();
 								 }
 							 }
 				 
 						}
 						}
+				
+							
+		 }
+		 }
 						
-		 }
-		 }
 }
 
 function opensearchserver_all() {
 	$arg = arg(NULL, $_GET['q']);
-	$result=getSearchResult($arg[2]);
-	 
+	$result=getSearchResult($arg[2],$arg[3]);
 	$cont=drupal_get_form('opensearchserver_page_form');
-	  		if (isset($result) && $result instanceof SimpleXMLElement) {
-
+  
+  		if (isset($result) && $result instanceof SimpleXMLElement) {
 		$ossResults = new OSS_Results($result);
+			if($ossResults->getResultFound()>0)
+		{
 		$resultTime = (float)$result->result['time'] / 1000;
-		$cont.=$ossResults->getResultFound().' documents found ('.$resultTime.' seconds)';
+			 
+		$cont.='<div align="left">'.$ossResults->getResultFound().' documents found ('.$resultTime.' seconds)'.'</div>';
 		  
 		$max = ($ossResults->getResultStart() + $ossResults->getResultRows() > $ossResults->getResultFound()) ? $ossResults->getResultFound() : $ossResults->getResultStart() + $ossResults->getResultRows();
-		//Documents iteration
+		$cont .='<table border="0">
+    <tr>
+         <td height="70" width="130">
+            <div>
+			';
+				$cont.='<p>'.'<a href=opensearchserver/search/'.$arg[2].'/?fq=All>ALL</a>'.'</p>';
+				foreach ($ossResults->getFacet('type') as $values)
+				{
+					$value = $values['name'];
+					$cont.='<p>'.'<a href='.'opensearchserver/search/'.$arg[2].'/?fq='.$value.'>'.ucfirst($value).'('.$values.')'.'</a>'.'</p>';
+					
+				}	
+						
+	$cont .=' </div>        </td>
+        <td rowspan="2">
+            <div>';
+	
 		for ($i = $ossResults->getResultStart(); $i < $max; $i++) {
 			$category	 = stripslashes($ossResults->getField($i, 'type', true));
 			 
@@ -469,7 +499,7 @@ function opensearchserver_all() {
 			$ossPaging = new OSS_Paging($result, 'r', 'p');
 			$pagingArray = array();
 			if (isset($ossPaging) && $ossPaging->getResultTotal() >= 1) {
-			print_r($ossPaging->getResultLow());
+			
 			   if ($ossPaging->getResultLow() > 0) {
 				$label = 'First';
 				$url = $ossPaging->getPageBaseURI().'1';
@@ -504,8 +534,24 @@ function opensearchserver_all() {
 				$cont.='<a href='.$page['url'].'>'.$page['label'].'</a>'.'&nbsp;&nbsp;&nbsp;';
 			  }
 		}
+		}
+		else
+		{
+		$cont.="No result found for keyword".$arg[2] ;
+		}
+		
+        
+           $cont.='
+               </div>      </td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+    </tr>
+</table>';
+	 
 		
  return $cont;
+ unset($cont);
 }
  
  function getSearchResult($query)
@@ -521,6 +567,15 @@ function opensearchserver_all() {
 			$query = trim($query);
 			$search = new OSS_Search($serverDetails->serverurl, $serverDetails->indexname, 10, $start);
 			$search->credential($serverDetails->username, $serverDetails->key);
+			$search->facet('type',1);
+			$filter=$_REQUEST['fq'];
+			if($filter)
+			{
+				if($filter!='All')
+				{
+					$search->filter('type:'.$filter);
+				}
+			}			 
 			$result = $search->query($query)->template('search')->execute(5);
 			
 		
@@ -542,18 +597,20 @@ function opensearchserver_page_form() {
     '#type' => 'textfield',
     '#title' => '',
 	'#default_value'=>$value,
-    '#maxlength' => 255,
+    '#maxlength' => 255,  
+	 
   );
- 
-  
+
   $form['basic']['inline']['submit'] = array('#type' => 'submit', '#value' => t('Search'));
 
   return $form;
 }
 
 function opensearchserver_page_form_submit($form_id, &$form_state) {
-  
+ 
+	 
    $form_state['redirect'] = 'opensearchserver/search/'. $form_state['values']['q'];
+  
 }
  
 function opensearchserver_block($op = 'list', $delta = 0, $edit = array()) {
