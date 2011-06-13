@@ -383,7 +383,7 @@ function get_content_index()
 								$document->newField('content', strip_tags($resultdoc->body));
 								$document->newField('url', $url.$resultdoc->nid);
 								$document->newField('timestamp', $resultdoc->timestamp);
-								$document->newField('user_name',strip_tags(($userdetails->name));
+								$document->newField('user_name',strip_tags($userdetails->name));
 								$document->newField('user_email',$userdetails->mail);
 								$document->newField('user_url',$user_url.$userdetails->uid);
 								$server = new OSS_API($ossEnginePath, $ossEngineIndex);
