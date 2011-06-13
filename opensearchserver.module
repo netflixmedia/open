@@ -71,8 +71,10 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
 				$form['basic']['inline']['submit'] = array('#type' => 'submit', '#value' => t('Search'));
 				$form['#validate'][] = 'opensearchserver_validate';
 				$form['#submit'][] = 'opensearchserver_submit';
-
-				break;
+				$form['#token'] = FALSE;
+				  unset($form['#token']);
+				  break;
+				 
 	  case 'search_theme_form':
       
         			 $form['search_theme_form'] = array(
@@ -83,6 +85,8 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
 				  );
 				    $form['submit'] = array('#type' => 'submit', '#value' => t('Search'));
 				  	$form['#submit'][] = 'opensearchserver_submit';
+					$form['#token'] = FALSE;
+					unset($form['#token']);
 				  break;
 	case 'search_block_form':      
         			 $form['search_block_form'] = array(
@@ -93,6 +97,9 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
 				  );
 				    $form['submit'] = array('#type' => 'submit', '#value' => t('Search'));
 				  	$form['#submit'][] = 'opensearchserver_submit';
+					$form['#token'] = FALSE;
+					unset($form['#token']);
+    
 				  break;
 		}
 		
