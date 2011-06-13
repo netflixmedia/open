@@ -1,5 +1,7 @@
 <?php
-
+if( !ini_get('safe_mode') ){
+            set_time_limit(-1);
+        } 
 require 'OSS_API.class.php';
 require 'misc.lib.php';
 require 'OSS_IndexDocument.class.php';
