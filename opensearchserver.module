@@ -10,7 +10,7 @@ require 'OSS_SearchTemplate.class.php';
 require 'oss_delete.class.php';
 
 function opensearchserver_perm() {
-  return array('access opensearchserver');
+  return array('access opensearchserver','access opensearchserver search');
 }
 
 function opensearchserver_menu() {
@@ -26,11 +26,10 @@ function opensearchserver_menu() {
   );
    
   $items['opensearchserver'] = array(
-    'title' => '',
-    'description' => 'This module will integrate OpenSearchServer 1.2 as search engine for Drupal 6.x',
-    'page callback' => 'opensearchserver_all',
-    'access arguments' => array('access opensearchserver'),
-    'type' => MENU_NORMAL_ITEM
+       'title'              => 'OpenSearchServer',
+    'description' 			=> 'This module will integrate OpenSearchServer 1.2 as search engine for Drupal 6.x',
+    'page callback'			=> 'opensearchserver_all',
+    'access arguments'		=> array('access opensearchserver search'),
   );
   
   return $items;
@@ -83,7 +82,19 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
 				    $form['submit'] = array('#type' => 'submit', '#value' => t('Search'));
 				  	$form['#submit'][] = 'opensearchserver_submit';
 				  break;
+	case 'search_block_form':
+      
+        			 $form['search_block_form'] = array(
+					'#type' => 'textfield',
+					'#title' => '',
+					'#size' => 15,
+					'#maxlength' => 255,
+				  );
+				    $form['submit'] = array('#type' => 'submit', '#value' => t('Searchaa'));
+				  	$form['#submit'][] = 'opensearchserver_submit';
+				  break;
 		}
+		
    
 }
 function opensearchserver_validate($form, &$form_state) {
