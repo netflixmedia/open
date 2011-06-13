@@ -378,12 +378,12 @@ function get_content_index()
 								$userdetails = db_fetch_object($getusers);
 								$document = $index->newDocument('en');
 								$document->newField('id', $resultdoc->type.'_'.$resultdoc->nid);
-								$document->newField('type', $resultdoc->type);
-								$document->newField('title', $resultdoc->title);
-								$document->newField('content', $resultdoc->body);
+								$document->newField('type', strip_tags($resultdoc->type));
+								$document->newField('title', strip_tags($resultdoc->title));
+								$document->newField('content', strip_tags($resultdoc->body));
 								$document->newField('url', $url.$resultdoc->nid);
 								$document->newField('timestamp', $resultdoc->timestamp);
-								$document->newField('user_name',$userdetails->name);
+								$document->newField('user_name',strip_tags(($userdetails->name));
 								$document->newField('user_email',$userdetails->mail);
 								$document->newField('user_url',$user_url.$userdetails->uid);
 								$server = new OSS_API($ossEnginePath, $ossEngineIndex);
@@ -441,23 +441,24 @@ function opensearchserver_all() {
 		$cont.='<div align="left">'.$ossResults->getResultFound().' documents found ('.$resultTime.' seconds)'.'</div>';
 		  
 		$max = ($ossResults->getResultStart() + $ossResults->getResultRows() > $ossResults->getResultFound()) ? $ossResults->getResultFound() : $ossResults->getResultStart() + $ossResults->getResultRows();
-		$cont .='<table border="0">
+		$cont .='<table border="0" style="border:none">
     <tr>
          <td height="70" width="130">
             <div>
 			';
-				$cont.='<p>'.'<a href=opensearchserver/search/'.$arg[2].'/?fq=All>ALL</a>'.'</p>';
+			$cont.='<br/>';
+				$cont.='<p>'.'<a href=?q=opensearchserver/search/'.$arg[2].'/&fq=All>ALL</a>'.'</p><br/>';
 				foreach ($ossResults->getFacet('type') as $values)
 				{
 					$value = $values['name'];
-					$cont.='<p>'.'<a href='.'opensearchserver/search/'.$arg[2].'/?fq='.$value.'>'.ucfirst($value).'('.$values.')'.'</a>'.'</p>';
+					$cont.='<p>'.'<a href=?q=opensearchserver/search/'.$arg[2].'/&fq='.$value.'>'.ucfirst($value).'('.$values.')'.'</a>'.'</p><br/>';
 					
 				}	
 						
 	$cont .=' </div>        </td>
         <td rowspan="2">
             <div>';
-	
+	$cont.='<br/>';
 		for ($i = $ossResults->getResultStart(); $i < $max; $i++) {
 			$category	 = stripslashes($ossResults->getField($i, 'type', true));
 			 
@@ -469,11 +470,10 @@ function opensearchserver_all() {
 				$user_url = stripslashes($ossResults->getField($i, 'user_url', true));
 				$type = stripslashes($ossResults->getField($i, 'type', true));
 				$url = stripslashes($ossResults->getField($i, 'url', false));
-				$cont.='<p>';
 				$cont.='<a href="'.$url.'">'.$subject.'</a><br/>';
 				$cont.=$comment.'<br/>';
-				$cont.='<a href='.$url.'>'.$url.'</a>&nbsp;&nbsp;&nbsp;&nbsp;'.$type.' by <a href='.$user_url.'>'.$user.'</a><br/>';
-				$cont.='</p>';
+				$cont.='<a href='.$url.'>'.$url.'</a>&nbsp;&nbsp;&nbsp;&nbsp;'.$type.' by <a href='.$user_url.'>'.$user.'</a><br/><br/>';
+				
 			}
 			else
 			{
@@ -483,10 +483,9 @@ function opensearchserver_all() {
 				$user_url = stripslashes($ossResults->getField($i, 'user_url', true));
 				$type = stripslashes($ossResults->getField($i, 'type', true));
 				$url = stripslashes($ossResults->getField($i, 'url', false));
-				$cont.='<p>';
 				$cont.='<a href="'.$url.'">'.$title.'</a><br/>';
 				$cont.=$content.'<br/>';
-				$cont.='<a href='.$url.'>'.$url.'</a>&nbsp;&nbsp;&nbsp;&nbsp;'.$type.' by <a href='.$user_url.'>'.$user.'</a><br/>';
+				$cont.='<a href='.$url.'>'.$url.'</a>&nbsp;&nbsp;&nbsp;&nbsp;'.$type.' by <a href='.$user_url.'>'.$user.'</a><br/><br/>';
 				$cont.='</p>';
 			}
 			
