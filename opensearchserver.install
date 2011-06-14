@@ -49,6 +49,13 @@ function annotate_schema(){
  'length' => '255',
  'not null' => TRUE,
  'not null' => TRUE),
+ 
+ 'signature' => array(
+ 'description' => t('The Signature of the post or page'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
  ),
  );
    $schema['opensearchserver_type'] = array(
