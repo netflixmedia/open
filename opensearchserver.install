@@ -1,7 +1,11 @@
 <?php 
 function opensearchserver_install() {
-     drupal_install_schema('annotate');
-     
+     drupal_install_schema('annotate');     
+}
+function opensearchserver_uninstall() {
+   drupal_uninstall_schema('annotate');
+   db_query('DELETE FROM {system} WHERE name = "opensearchserver"');
+    
 }
 function annotate_schema(){
 
@@ -76,7 +80,4 @@ function annotate_schema(){
  
 return $schema;
 
-}
-function opensearchserver__uninstall() {
-   drupal_uninstall_schema('annotate');
 }
