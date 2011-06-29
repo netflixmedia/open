@@ -54,6 +54,13 @@ function annotate_schema(){
  'not null' => TRUE,
  'not null' => TRUE),
  
+  'filter_enabled' => array(
+ 'description' => t('Enabling the filter type.'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+ 
  'signature' => array(
  'description' => t('The Signature of the post or page'),
  'type' => 'varchar',
@@ -67,6 +74,27 @@ function annotate_schema(){
  'fields' => array(
  
  'type' => array(
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+
+ 'enabled' => array(
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE)));
+ 
+  $schema['opensearchserver_categories'] = array(
+ 'description' => t('The table for opensearchserver categories.'),
+ 'fields' => array(
+ 'id' => array(
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+
+ 'categories' => array(
  'type' => 'varchar',
  'length' => '255',
  'not null' => TRUE,
