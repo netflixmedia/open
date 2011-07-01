@@ -63,9 +63,13 @@ class OSS_SearchTemplate {
 			if ($return === false) return false;
 			return true;
 	}
-	public function setSnippetField($qtname,$snippetField)
+	public function setSnippetField($qtname,$snippetField,$maxSnippetSize=null,$tag=null,$maxSnippetNo=null,$fragmenter=null)
 	{
 			$params = array("qt.name" => $qtname);
+			if($maxSnippetSize) $params['qt.maxSnippetSize']=$maxSnippetSize;
+			if($tag) $params['qt.tag']=$tag;
+			if($maxSnippetNo) $params['qt.maxSnippetNo']=$maxSnippetNo;
+			if($fragmenter) $params['qt.fragmenter']=$fragmenter;
 			$params['snippetfield']=$snippetField;
 			$return = OSS_API::queryServerXML($this->getQueryURL(OSS_API::API_SEARCH_TEMPLATE, $this->index	, OSS_API::API_SEARCH_TEMPLATE_SETSNIPPETFIELD, $params));
 			if ($return === false) return false;

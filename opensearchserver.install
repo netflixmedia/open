@@ -67,7 +67,28 @@ function annotate_schema(){
  'length' => '255',
  'not null' => TRUE,
  'not null' => TRUE),
- ),
+ 
+ 'title_snippet' => array(
+ 'description' => t('The Signature of the post or page'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+ 
+ 'content_snippet' => array(
+ 'description' => t('The Signature of the post or page'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+ 
+  'url_snippet' => array(
+ 'description' => t('The Signature of the post or page'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+ )
  );
    $schema['opensearchserver_type'] = array(
  'description' => t('The base table for saved articles.'),
