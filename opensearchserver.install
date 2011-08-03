@@ -69,21 +69,35 @@ function annotate_schema(){
  'not null' => TRUE),
  
  'title_snippet' => array(
- 'description' => t('The Signature of the post or page'),
+ 'description' => t('The Size of the title Snippet'),
  'type' => 'varchar',
  'length' => '255',
  'not null' => TRUE,
  'not null' => TRUE),
  
  'content_snippet' => array(
- 'description' => t('The Signature of the post or page'),
+ 'description' => t('The Size of the conetnt Snippet'),
  'type' => 'varchar',
  'length' => '255',
  'not null' => TRUE,
  'not null' => TRUE),
  
   'url_snippet' => array(
- 'description' => t('The Signature of the post or page'),
+ 'description' => t('The Size of the URL Snippet'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+ 
+ 'date' => array(
+ 'description' => t('The Type of date need to be created for filtering.'),
+ 'type' => 'varchar',
+ 'length' => '255',
+ 'not null' => TRUE,
+ 'not null' => TRUE),
+ 
+  'date_filter' => array(
+ 'description' => t('Enabling Filter for date.'),
  'type' => 'varchar',
  'length' => '255',
  'not null' => TRUE,

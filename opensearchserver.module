@@ -287,6 +287,28 @@ function admin_index_form()
 	 '#description' => t('The Maximum Size of the URL Snippet'),
  	 '#default_value' => $sdetails->url_snippet,
    );
+   	$form['date'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Date'),
+	'#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+       $form['date']['timestamp'] = array(
+        '#type' => 'select',
+        '#title' => 'Select the Type of Date to be indexed',
+        '#options' => array(
+            createddate => t('Created Date'),
+            changeddate => t('Changed Date'),
+            
+        ),
+		 '#default_value' => $sdetails->delay,
+    );
+	   $form['date']['date_filters'] = array(
+        '#type' => 'checkbox',
+		'#description' => t('Enable the Checkbox to enable Date filter '),
+		'#title' => t('Enable Date Filter'),
+		'#default_value' => $sdetails->date_filter,
+		     );
   $form['submit'] = array('#type' => 'submit', '#value' => t('Create-index / Save'),'#name'=>'save',);
   $form['StartIndexing'] = array('#type' => 'submit', '#value' => t('Re-index site'),'#name'=>'index');
 	return $form;
@@ -322,6 +344,7 @@ function setFields_OSS($url,$indexname,$username,$key)
 			  $ossAPI->setField('id','','NO','YES','YES','','NO','YES');
 			  $ossAPI->setField('type','','NO','YES','YES','','NO','NO');
 			  $ossAPI->setField('taxonomy','','NO','YES','YES','','NO','NO');
+			  $ossAPI->setField('content_timestamp','','NO','YES','YES','','NO','NO');
 			  $ossAPI->setField('url','','NO','YES','YES','','NO','NO');
 			  $ossAPI->setField('title','TextAnalyzer','compress','YES','positions_offsets','','NO','NO');
 			  $ossAPI->setField('content','TextAnalyzer','compress','YES','positions_offsets','','YES','NO');
@@ -355,6 +378,7 @@ function setFields_OSS($url,$indexname,$username,$key)
 			   $searchTemplate->setReturnField("search","user_url");
 			   $searchTemplate->setReturnField("search","type");
 			   $searchTemplate->setReturnField("search","taxonomy");
+			   $searchTemplate->setReturnField("search","content_timestamp");
 			   $searchTemplate->setSnippetField("search","comments_comment","200","b","1","SentenceFragmenter");
 			   $searchTemplate->setSnippetField("search","comments_subject","150","b","1","NoFragmenter");
 			   $searchTemplate->setSnippetField("search","user_name","70","b","1","NoFragmenter");
@@ -367,7 +391,7 @@ function populate_db(&$form_state,$serverurl,$indexname,$username, $key)
 				db_query("TRUNCATE TABLE {opensearchserver_type}");
 				db_query("TRUNCATE TABLE {opensearchserver_categories}");
 				
-				db_query("INSERT INTO `{opensearchserver}` (`serverurl`, `indexname`, `username`, `key`,`last_indexed`,`delay`,`filter_enabled`,`signature`,`title_snippet`,`content_snippet`,`url_snippet`) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s','%s','%s','%s','%s')", $form_state['values']['serverurl'], $form_state['values']['indexname'], $form_state['values']['username'], $form_state['values']['key'],'',$form_state['values']['delay'],$form_state['values']['filters'],$form_state['values']['signature'],$form_state['values']['title_snippet'],$form_state['values']['content_snippet'],$form_state['values']['url_snippet']);
+				db_query("INSERT INTO `{opensearchserver}` (`serverurl`, `indexname`, `username`, `key`,`last_indexed`,`delay`,`filter_enabled`,`signature`,`title_snippet`,`content_snippet`,`url_snippet`,`date`,`date_filter`) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s','%s','%s','%s','%s','%s','%s')", $form_state['values']['serverurl'], $form_state['values']['indexname'], $form_state['values']['username'], $form_state['values']['key'],'',$form_state['values']['delay'],$form_state['values']['filters'],$form_state['values']['signature'],$form_state['values']['title_snippet'],$form_state['values']['content_snippet'],$form_state['values']['url_snippet'],$form_state['values']['timestamp'],$form_state['values']['date_filters']);
 				$types = db_query("SELECT DISTINCT type FROM {node_type}");
 			
 				while ($type = db_fetch_object($types)) 
@@ -499,11 +523,18 @@ if (!isset($langcode)) {
 				}
 				$j=$i+100;
 				
-			    
-					$sql='SELECT node.type,node.nid,node.comment,node.status, node_revisions.uid,node_revisions.title,node_revisions.body,node_revisions.timestamp
+			    if($serverDetails->date="createddate")
+				{
+					$sql='SELECT node.type,node.nid,node.comment,node.status, node.created,node_revisions.uid,node_revisions.title,node_revisions.body,node_revisions.timestamp
 							FROM {node}, {node_revisions}
 							WHERE node.nid = node_revisions.nid AND node.type LIKE'."'".$type->type."'".'LIMIT '.$i.','.$j;
-				
+				}
+				else 
+				{
+					$sql='SELECT node.type,node.nid,node.comment,node.status, node.changed,node_revisions.uid,node_revisions.title,node_revisions.body,node_revisions.timestamp
+							FROM {node}, {node_revisions}
+							WHERE node.nid = node_revisions.nid AND node.type LIKE'."'".$type->type."'".'LIMIT '.$i.','.$j;
+				}
 				$result = db_query($sql);
 				$index = new OSS_IndexDocument();
 				while ($resultdoc = db_fetch_object($result)) 
@@ -519,6 +550,14 @@ if (!isset($langcode)) {
 								$userdetails = db_fetch_object($getusers);
 								$document = $index->newDocument($language->language);
 								$document->newField('id', $resultdoc->type.'_'.$resultdoc->nid);
+								if($resultdoc->created)
+								{
+									$document->newField('content_timestamp', date('YmdHis',$resultdoc->created));
+								}
+								else
+								{
+									$document->newField('content_timestamp',date('YmdHis',$resultdoc->changed));
+								}
 								$document->newField('type')->newValue(html_entity_decode($resultdoc->type, ENT_QUOTES, 'UTF-8'),true);
 								$document->newField('taxonomy')->newValue(html_entity_decode($taxonomyarray_data->name, ENT_QUOTES, 'UTF-8'),true);
 								$document->newField('title')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), true);
@@ -591,13 +630,44 @@ function start_indexing($index,$serverDetails,$ossEnginePath, $ossEngineIndex)
 function opensearchserver_all() {
 	$arg = arg(NULL, $_GET['q']);
 	$result=getSearchResult($arg[2],$arg[3]);
-	$cont=drupal_get_form('opensearchserver_page_form');
-  		$signature = db_query("SELECT signature,filter_enabled,url_snippet FROM {opensearchserver}");
+	$timestamp_array = array("past24" => "Past 24 hours","pastweek"=>"Past week","pastmonth"=>"Past month","pastyear"=>"Past year");
+	
+		$cont=drupal_get_form('opensearchserver_page_form');
+  		$signature = db_query("SELECT signature,filter_enabled,url_snippet,date_filter FROM {opensearchserver}");
 		$signaturedetails = db_fetch_object($signature);
 		
   		if (isset($result) && $result instanceof SimpleXMLElement) {
 		$ossResults = new OSS_Results($result);
-			if($ossResults->getResultFound()>0)
+		
+		if($ossResults->getResultFound()<=0)
+		{
+		 	$cont .='<table border="0" style="border:none">
+			<tr>
+				<td height="70" width="130">';
+					$cont.='<div class="oss_facet">Type <br/>';
+					$cont.='<div class="oss_facet_type"><ul><li><div class="oss_facet_all">'.'<a href=/?q=opensearchserver/search/'.urlencode($arg[2]).'/&fq=All>Everything</a></div></li><br/>';
+					$cont.='<div class="oss_facet_categories"><br/>';$cont.='Categories';
+					$cont.='<ul><li><div class="oss_facet_all"><a href=/?q=opensearchserver/search/'.urlencode($arg[2]).'/&tq=All>Everything</a>'.'</div></li><br/>';
+					$cont.='<div class="oss_facet_categories"><br/>';$cont.='Date';
+					$cont.='<ul><li><div class="oss_facet_all"><a href=/?q=opensearchserver/search/'.urlencode($arg[2]).'/&ts=anytime>Any Time</a>'.'</div></li>';
+					$cont .=' </td>
+				<td rowspan="2">
+              ';
+			  
+			$cont.='<div align="left" style="margin-top: 30px;"><p> No documents containing all your search terms were found.
+					</p><p>'.'Your Search Keyword <b>'.$arg[2].'</b> did not match any document.'.'</p><br/><p>Suggestions:</p>
+					<p>- Make sure all words are spelled correctly.</p>
+					<p>- Try different keywords.</p>
+					<p>- Try more general keywords.</p>';
+		   $cont.='</td>
+					</tr>
+					<tr>
+					<td></td>
+					</tr>
+				</table>';
+		}
+	 
+		else
 		{
 		$resultTime = (float)$result->result['time'] / 1000;
 			 
@@ -612,7 +682,7 @@ function opensearchserver_all() {
 			if($signaturedetails->filter_enabled)
 			{
 				$cont.='<div class="oss_facet">Type <br/>';
-					$cont.='<div class="oss_facet_type"><ul><li><div class="oss_facet_all">'.'<a href=/?q=opensearchserver/search/'.urlencode($arg[2]).'/&fq=All>All</a></div></li>';
+					$cont.='<div class="oss_facet_type"><ul><li><div class="oss_facet_all">'.'<a href=/?q=opensearchserver/search/'.urlencode($arg[2]).'/&fq=All>Everything</a></div></li>';
 					foreach ($ossResults->getFacet('type') as $values)
 					{
 						$value = $values['name'];
@@ -624,7 +694,7 @@ function opensearchserver_all() {
 					if($ossResults->getFacet('taxonomy'))
 					{
 							$cont.='<div class="oss_facet_categories"><br/>';$cont.='Categories';
-							$cont.='<ul><li><div class="oss_facet_all"><a href=/?q=opensearchserver/search/'.urlencode($arg[2]).'/&tq=All>All</a>'.'</div></li>';
+							$cont.='<ul><li><div class="oss_facet_all"><a href=/?q=opensearchserver/search/'.urlencode($arg[2]).'/&tq=All>Everything</a>'.'</div></li>';
 							 foreach ($ossResults->getFacet('taxonomy') as $taxonomys)
 							{
 								$taxonomy_name = $taxonomys['name'];
@@ -633,8 +703,22 @@ function opensearchserver_all() {
 							}
 							 $cont.='</ul>';
 					}
+					
+			}			
+				if($signaturedetails->date_filter)
+				{
+						$cont.='<div class="oss_facet_categories"><br/>';$cont.='Date';
+						$cont.='<ul><li><div class="oss_facet_all"><a href=/?q=opensearchserver/search/'.urlencode($arg[2]).'/&ts=anytime>Any Time</a>'.'</div></li>';
+							 foreach ($timestamp_array as $timestamp)
+							{
+							 
+								$cont.='<li><a href=/?q=opensearchserver/search/'.urlencode($arg[2]).'&ts='.urlencode($timestamp).'>'.$timestamp.'</a>'.'</li>';
+							
+							}
+							 $cont.='</ul>';
 								$cont.='</div></div>';	
-			}				
+				}
+				
 	$cont .=' </div>        </td>
         <td rowspan="2">
               <div class="oss_results">';
@@ -735,11 +819,7 @@ function opensearchserver_all() {
 			  }
 		}
 		}
-		else
-		{
-		$cont.="No result found for keyword".$arg[2] ;
-		}
-		
+	
         
            $cont.='</div>
                </div>      </td>
@@ -787,7 +867,8 @@ function opensearchserver_all() {
 			{
 				if($filter!='All')
 				{
-					$search->filter('type:'.$filter);
+					
+					$search->filter('type:"'.$filter.'"');
 				}
 			}
 			$filter_categories=$_REQUEST['tq'];
@@ -795,9 +876,33 @@ function opensearchserver_all() {
 			{
 				if($filter_categories!='All')
 				{
-					$search->filter('taxonomy:'.$filter_categories);
+					$search->filter('taxonomy:"'.$filter_categories.'"');
 				}
 			}				
+			$timestamp_filter=$_REQUEST['ts'];
+			if($timestamp_filter)
+			{
+				if($timestamp_filter!='All') 
+
+				{
+					if($timestamp_filter=="Past 24 hours")
+					{
+						$search->filter('content_timestamp:['.date("YmdHis", mktime(0, 0, 0, date("m"),date("d")-1,date("Y"))).' TO '.date("YmdHis").']');
+					}
+					else if($timestamp_filter=="Past week")
+					{
+							$search->filter('content_timestamp:['.date("YmdHis", mktime(0, 0, 0, date("m"),date("d")-7,date("Y"))).' TO '.date("YmdHis").']');
+					}
+					else if($timestamp_filter=="Past month")
+					{
+						$search->filter('content_timestamp:['.date("YmdHis", mktime(0, 0, 0, date("m"),date("d")-31,date("Y"))).' TO '.date("YmdHis").']');
+					}
+					else if($timestamp_filter=="Past year")
+					{
+						$search->filter('content_timestamp:['.date("YmdHis", mktime(0, 0, 0, date("m"),date("d")-365,date("Y"))).' TO '.date("YmdHis").']');
+					}
+				}
+			}
 			$result = $search->query($query)->template('search')->execute(5);
 			
 		
