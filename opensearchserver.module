@@ -1,7 +1,7 @@
 <?php
 if( !ini_get('safe_mode') ){
             set_time_limit(-1);
-        } 
+	} 
 require 'OSS_API.class.php';
 require 'misc.lib.php';
 require 'OSS_IndexDocument.class.php';
@@ -38,14 +38,11 @@ function opensearchserver_menu() {
 }
  
 function admin_Settings() {
- 
- return drupal_get_form('admin_index_form');
- 
-}
+  return drupal_get_form('admin_index_form');
+ }
 function opensearchserver_preprocess_search_theme_form(&$vars, $hook)
 {
 	  $vars['form']['search_theme_form']['#value'] = t('Search this Site');
-
 }
 function opensearchserver_form_alter(&$form, $form_state, $form_id) {
     $form_id_processed = $form_id;
@@ -115,8 +112,7 @@ function opensearchserver_submit($form, &$form_state) {
 	
 	if($form_state['values']['search_theme_form'])
 	{
-	
-		$form_state['redirect'] = 'opensearchserver/search/'. $form_state['values']['search_theme_form'];
+			$form_state['redirect'] = 'opensearchserver/search/'. $form_state['values']['search_theme_form'];
 	}
 	else if($form_state['values']['search_block_form'])
 	{
