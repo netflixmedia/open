@@ -284,7 +284,7 @@ function indentXML($string) {
       $pad = str_repeat(' ', max(0, $indent-1));
     }
     return $pad . $matches[0] . ($indent ? "\n" : "");
-  } 
+  }
 
   return preg_replace_callback('/<[^>]+>/', "indentXML_pregCallback", $string);
 

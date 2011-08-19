@@ -25,6 +25,7 @@
  * @file
  * Class to access OpenSearchServer API
  */
+
 if (!class_exists('OSS_API')) { trigger_error("OSS_Search won't work whitout OSS_API", E_USER_ERROR); die(); }
 if (!class_exists('ArrayObject')) { trigger_error("OSS_IndexDocument won't work whitout SPL ArrayObject", E_USER_ERROR); die(); }
 
@@ -41,7 +42,7 @@ class OSS_IndexDocument extends ArrayObject {
   public function newDocument($language = '') {
     $document = new OSS_IndexDocument_Document($this, $language);
     $this->append($document);
-    
+
     return $document;
   }
 
@@ -121,7 +122,7 @@ class OSS_IndexDocument_Document extends ArrayObject {
 
     if ($supportedLanguages === NULL)
       $supportedLanguages = OSS_API::supportedLanguages();
-    
+
     if (isset($supportedLanguages[$language]))
       $this->language = (string)$language;
     else {

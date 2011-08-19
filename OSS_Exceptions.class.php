@@ -25,7 +25,7 @@
  * @file
  * Class to access OpenSearchServer API
  */
-  
+
 if (!class_exists('RuntimeException')) { class RuntimeException extends Exception {} }
 if (!class_exists('LogicException')) { class LogicException extends Exception {} }
 if (!class_exists('InvalidArgumentException')) { class InvalidArgumentException extends LogicException {} }

@@ -34,7 +34,7 @@ if (!class_exists('OutOfRangeException')) { class OutOfRangeException extends Lo
  * @author pmercier <pmercier@open-search-server.com>
  * @package OpenSearchServer
  */
-  
+
 
 class OSS_API {
 
@@ -48,17 +48,17 @@ const API_SELECT   = 'select';
   const API_PATTERN  = 'pattern';
   const API_SCHEMA   = 'schema';
   const API_SEARCH_TEMPLATE='searchtemplate';
-  
+
   const API_SEARCH_TEMPLATE_CREATE='create';
   const API_SEARCH_TEMPLATE_SETRETURNFIELD='setreturnfield';
-  const API_SEARCH_TEMPLATE_SETSNIPPETFIELD='setsnippetfield';  
-  
+  const API_SEARCH_TEMPLATE_SETSNIPPETFIELD='setsnippetfield';
+
   const API_SCHEMA_INDEX_LIST    = 'indexList';
   const API_SCHEMA_CREATE_INDEX  = 'createIndex';
   const API_SCHEMA_GET_SCHEMA    = 'getSchema';
   const API_SCHEMA_SET_FIELD    = "setField";
   const API_SCHEMA_DELETE_FIELD  = "deleteField";
-  
+
   const INDEX_TEMPLATE_EMPTY  = 'empty_index';
 
 
@@ -111,13 +111,13 @@ const API_SELECT   = 'select';
    * @return OSS_API
    */
   public function __construct($enginePath, $index = NULL, $login = NULL, $apiKey = NULL) {
-    
+
     $parsedPath = OSS_API::parseEnginePath($enginePath, $index);
     $this->enginePath  = $parsedPath['enginePath'];
     $this->index    = $parsedPath['index'];
-    
+
     $this->credential($login, $apiKey);
-    
+
   if (!function_exists('OSS_API_Dummy_Function')) {
     function OSS_API_Dummy_Function() {
   }
@@ -137,7 +137,7 @@ const API_SELECT   = 'select';
   public function getIndex() {
     return $this->index;
   }
-  
+
   /**
    * Assign credential information for the next queries
    * @param $login string
@@ -151,7 +151,7 @@ const API_SELECT   = 'select';
       $this->apiKey  = NULL;
       return;
     }
-    
+
     // Else parse and affect new credentials
     if (empty($login) || empty($apiKey)) {
       if (class_exists('OSSException'))
@@ -159,11 +159,11 @@ const API_SELECT   = 'select';
       trigger_error(__CLASS__ . '::' . __METHOD__ . ': You must provide a login and an api key to use credential.', E_USER_ERROR);
       return FALSE;
     }
-    
+
     $this->login  = $login;
     $this->apiKey  = $apiKey;
   }
-  
+
   /**
    * Return an OSS_Search using the current engine path and index
    * @param string $index If provided, this index name is used in place of the one defined in the API instance
@@ -254,29 +254,29 @@ const API_SELECT   = 'select';
    * )
    */
   protected function getQueryURL($apiCall, $index = NULL, $cmd = NULL, $options = NULL) {
-    
+
     $path = $this->enginePath . '/' . $apiCall;
     $chunks = array();
-    
+
     if (!empty($index)) $chunks[] = 'use=' . urlencode($index);
-    
+
     if (!empty($cmd)) $chunks[] = 'cmd=' . urlencode($cmd);
-    
+
     // If credential provided, include them in the query url
     if (!empty($this->login)) {
       $chunks[] = "login=" . urlencode($this->login);
       $chunks[] = "key="  . urlencode($this->apiKey);
     }
-    
+
     // Prepare additionnal parameters
     if (is_array($options)) {
       foreach ($options as $argName => $argValue) {
         $chunks[] = $argName . "=" . urlencode($argValue);
       }
     }
-    
+
     $path .= (strpos($path, '?') !== FALSE ? '&' : '?') . implode("&", $chunks);
-    
+
     return $path;
   }
 
@@ -289,7 +289,7 @@ const API_SELECT   = 'select';
    * @return boolean True on success
    */
   public function update($xml, $index = NULL) {
-    
+
     $index = $index ? $index : $this->index;
 
     // Cast $xml to a string
@@ -344,32 +344,32 @@ const API_SELECT   = 'select';
    */
   public function getIndexInformations($index = NULL) {
     $index = $index ? $index : $this->index;
-    
+
     $infos  = array(
       'name'  => $index,
       'size'  => NULL
     );
-    
+
     set_error_handler('OSS_API_Dummy_Function', E_ALL);
     try { $result = $this->queryServerXML($this->getQueryURL(OSS_API::API_SELECT, $index) . '&q=*:*&rows=0'); }
-    catch (Exception $e) { 
-    $result = FALSE; 
+    catch (Exception $e) {
+    $result = FALSE;
     }
     restore_error_handler();
     if ($result instanceof SimpleXMLElement) {
-      $infos['count'] = $result->result['numFound']; 
+      $infos['count'] = $result->result['numFound'];
     }
-    
+
     return $infos;
   }
-  
+
   /**
    * Check if the engine is running. Don't check the existance of the index.
    * @return boolean Return NULL if can't connect to tomcat. Return FALSE if engine fail to answer. Return TRUE if the engine is running.
    * @todo Recode this method once API is provided
    */
   public function isEngineRunning() {
-    
+
     // Check if the select api is answering
     $rcurl = curl_init($this->getQueryURL(OSS_API::API_SELECT, $index) . '&q=!*:*&rows=0');
     curl_setopt($rcurl, CURLOPT_HTTP_VERSION, '1.0');
@@ -382,33 +382,33 @@ const API_SELECT   = 'select';
     if ($infos['http_code'] >= 200 && $infos['http_code'] < 300) return TRUE;
     if ($infos['http_code'] == 0) return NULL;
     return FALSE;
-    
+
   }
-  
+
   /**
    * Check if the index is available
    * @param string $index If provided, this index name is used in place of the one defined in the API instance
    * @return boolean True if exist.
    * FIXME Recode to use the new API Schema
-   * @todo Recode this method once API is provided 
+   * @todo Recode this method once API is provided
    */
   public function isIndexAvailable($index = NULL) {
     $index = $index ? $index : $this->index;
     // Check if the select api is answering
     set_error_handler('OSS_API_Dummy_Function', E_ALL);
-    try { 
-    $result = $this->queryServerXML($this->getQueryURL(OSS_API::API_SELECT, $index) . '&q=!*:*&rows=0'); 
+    try {
+    $result = $this->queryServerXML($this->getQueryURL(OSS_API::API_SELECT, $index) . '&q=!*:*&rows=0');
     }
     catch (Exception $e) {
-      $result = FALSE; 
+      $result = FALSE;
     }
     restore_error_handler();
     return (bool)$result;
   }
-  
+
   /**
    * Return the list of indexes usable by the current credential
-   * @return string[] 
+   * @return string[]
    */
   public function indexList() {
     $return = $this->queryServerXML($this->getQueryURL(OSS_API::API_SCHEMA, NULL, OSS_API::API_SCHEMA_INDEX_LIST));
@@ -417,7 +417,7 @@ const API_SELECT   = 'select';
       $indexes[] = (string)$index['name'];
     return $indexes;
   }
-  
+
   /**
    * Create a new index using a template
    * @param string $index The name of the new index
@@ -425,14 +425,14 @@ const API_SELECT   = 'select';
    * @return boolean
    */
   public function createIndex($index, $template = FALSE) {
-    
+
     $params = array("index.name" => $index);
     if ($template) $params["index.template"] = $template;
     $return = $this->queryServerXML($this->getQueryURL(OSS_API::API_SCHEMA, NULL, OSS_API::API_SCHEMA_CREATE_INDEX, $params));
     if ($return === FALSE) return FALSE;
     return TRUE;
   }
-  
+
   /**
    * Retreive the complete schema of the index
    * @param string $index If provided, this index name is used in place of the one defined in the API instance
@@ -444,7 +444,7 @@ const API_SELECT   = 'select';
     $index = $index ? $index : $this->index;
     return $this->queryServerXML($this->getQueryURL(OSS_API::API_SCHEMA, $index, OSS_API::API_SCHEMA_GET_SCHEMA));
   }
-  
+
   /**
    * Create or alter a field
    * @param string $name
@@ -464,13 +464,13 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
     if ($termVector) $params["field.termVector"] = $termVector;
       if ($termVector) $params["field.default"] = $default;
         if ($termVector) $params["field.unique"] = $unique;
-    
+
     $return = $this->queryServerXML($this->getQueryURL(OSS_API::API_SCHEMA, $index, OSS_API::API_SCHEMA_SET_FIELD, $params));
-    
+
     if ($return === FALSE) return FALSE;
     return TRUE;
   }
-  
+
   /**
    * Post data to an URL
    * @param string $url
@@ -482,9 +482,9 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
    * Will fail if more than 16 HTTP redirection
    */
   public static function queryServer($url, $data = NULL, $connexionTimeout = OSS_API::DEFAULT_CONNEXION_TIMEOUT, $timeout = OSS_API::DEFAULT_QUERY_TIMEOUT) {
-    
+
     // Use CURL to post the data
-    
+
     $rcurl = curl_init($url);
     curl_setopt($rcurl, CURLOPT_HTTP_VERSION, '1.0');
     curl_setopt($rcurl, CURLOPT_BINARYTRANSFER, TRUE);
@@ -509,7 +509,7 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
     set_error_handler('OSS_API_Dummy_Function', E_ALL);
     $content = curl_exec($rcurl);
     restore_error_handler();
-    
+
     if ($content === FALSE) {
       if (class_exists('OSSException'))
         throw new RuntimeException('CURL failed to execute on URL "' . $url . '"');
@@ -534,7 +534,7 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
       trigger_error(check_plain('OSS Returned an error: "' . trim(strip_tags($content)) . '"', E_USER_WARNING));
       return FALSE;
     }
-    
+
     return $content;
   }
 
@@ -550,7 +550,7 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
   public static function queryServerXML($url, $data = NULL, $connexionTimeout = OSS_API::DEFAULT_CONNEXION_TIMEOUT, $timeout = OSS_API::DEFAULT_QUERY_TIMEOUT) {
     $result = OSS_API::queryServer($url, $data, $connexionTimeout, $timeout);
     if ($result === FALSE) return FALSE;
-    
+
     // Check if we have a valid XML string from the engine
     $lastErrorLevel = error_reporting(0);
     $xmlResult = simplexml_load_string(OSS_API::cleanUTF8($result));
@@ -564,7 +564,7 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
 
     return $xmlResult;
   }
-  
+
   /**
    * Check if the answer is an error returned by OSS
    * @param $xml string, DOMDocument or SimpleXMLElement
@@ -610,7 +610,7 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
    * @param $index The index name
    */
   public static function parseEnginePath($enginePath, $index = NULL) {
-    
+
     $urlParams = array();
     // Extract the use param in the query part if any
     if (strpos($enginePath, '?') !== FALSE) {
@@ -623,11 +623,11 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
           $enginePath = drupal_substr($enginePath, 0, -1);
       }
     }
-    
+
     return array('enginePath' => $enginePath, 'index' => $index);
-    
+
   }
-  
+
   /**
    * Return a list of supported language. Array is indexed by ISO 639-1 format (en, de, fr, ...)
    * return Array<String>
@@ -649,7 +649,7 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
     );
     return str_replace($escaping[0], $escaping[1], $string);
   }
-  
+
   /**
    * Clean an UTF-8 string to prevent simpleXMLElement to fail on some characters (remove them)
    * @param string $string
@@ -664,7 +664,7 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
       "\x18", "\x19", "\x1A", "\x1B", "\x1C", "\x1D", "\x1E", "\x1F"
     );
     return str_replace($remove, $replacement, $string);
-    
+
   }
-  
+
 }

@@ -17,6 +17,7 @@ INSTALLATION
     * OpenSearchServer 1.2 or higher
     * Drupal 6.x
   
+  
 1) Check that you have a running OpenSearchServer instance.If you have any issues 
    while installing OpenSearchServer check this documentation 
     http://www.open-search-server.com/documentation

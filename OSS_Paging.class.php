@@ -24,7 +24,8 @@
  * @file
  * Class to access OpenSearchServer API
  */
-  
+
+
 if (!extension_loaded('SimpleXML')) { trigger_error("OSS_API won't work whitout SimpleXML extension", E_USER_ERROR); die(); }
 
 
@@ -42,7 +43,6 @@ class OSS_Paging {
   protected $resultPrev;
   protected $resultNext;
   protected $pageBaseURI;
-  
   protected $rowsParameter;
   protected $pageParameter;
   const MAX_PAGE_TO_LINK=10;
@@ -105,7 +105,6 @@ class OSS_Paging {
         $high += $low * -1;
       }
       if ($high > $this->resultTotal) {
-      
         $low -= $high - $this->resultTotal;
       }
 

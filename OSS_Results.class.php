@@ -27,6 +27,7 @@ if (!extension_loaded('SimpleXML')) { trigger_error("OSS_API won't work whitout 
  * author philcube <egosse@open-search-server.com>
  * package OpenSearchServer
  */
+
 class OSS_Results {
 
   /* @var SimpleXMLElement */
@@ -49,7 +50,7 @@ class OSS_Results {
     $this->resultRows    = (int)$this->result->result['rows'];
     $this->resultStart   = (int)$this->result->result['start'];
 
-    if (!function_exists('OSS_API_Dummy_Function')) { 
+    if (!function_exists('OSS_API_Dummy_Function')) {
   function OSS_API_Dummy_Function() {
   }
   }

@@ -23,13 +23,13 @@
  * @file
  * Class to access OpenSearchServer API
  */
-  
+
 if (!class_exists('OSS_API')) { trigger_error("OSS_Search won't work whitout OSS_API", E_USER_ERROR); die(); }
 
 class oss_delete {
   protected $enginePath;
   protected $index;
-  public function __construct($enginePath, $index = NULL, $login = NULL, $apiKey = NULL) { 
+  public function __construct($enginePath, $index = NULL, $login = NULL, $apiKey = NULL) {
     $ossAPI = new OSS_API($enginePath, $index);
     $this->enginePath  = $ossAPI->getEnginePath();
     $this->index    = $ossAPI->getIndex();
@@ -37,7 +37,7 @@ class oss_delete {
   }
 
 public function delete($query) {
-      $params = array("q" => $query);  
+      $params = array("q" => $query);
       $return = OSS_API::queryServerXML($this->getQueryURL(OSS_API::API_DELETE, $this->index  , OSS_API::API_SCHEMA_DELETE_FIELD, $params));
       if ($return === FALSE) return FALSE;
       return TRUE;
@@ -62,29 +62,29 @@ public function credential($login, $apiKey) {
     $this->apiKey  = $apiKey;
   }
   protected function getQueryURL($apiCall, $index = NULL, $cmd = NULL, $options = NULL) {
-    
+
     $path = $this->enginePath . '/' . $apiCall;
     $chunks = array();
-    
+
     if (!empty($index)) $chunks[] = 'use=' . urlencode($index);
-    
+
     if (!empty($cmd)) $chunks[] = 'cmd=' . urlencode($cmd);
-    
+
     // If credential provided, include them in the query url
     if (!empty($this->login)) {
       $chunks[] = "login=" . urlencode($this->login);
       $chunks[] = "key="  . urlencode($this->apiKey);
     }
-    
+
     // Prepare additionnal parameters
     if (is_array($options)) {
       foreach ($options as $argName => $argValue) {
         $chunks[] = $argName . "=" . urlencode($argValue);
       }
     }
-    
+
     $path .= (strpos($path, '?') !== FALSE ? '&' : '?') . implode("&", $chunks);
-    
+
     return $path;
-  } 
+  }
 }
