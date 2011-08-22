@@ -1,32 +1,24 @@
 <?php
-/*
- *  This file is part of Jaeksoft OpenSearchServer.
- *
- *  Copyright (C) 2008-2009 Emmanuel Keller / Jaeksoft
- *
- *  http://www.open-search-server.com
- *
- *  Jaeksoft OpenSearchServer is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  Jaeksoft OpenSearchServer is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with Jaeksoft OpenSearchServer.  If not, see <http://www.gnu.org/licenses/>.
- */
 
-if (!extension_loaded('curl')) { trigger_error("OSS_API won't work whitout curl extension", E_USER_ERROR); die(); }
-if (!extension_loaded('SimpleXML')) { trigger_error("OSS_API won't work whitout SimpleXML extension", E_USER_ERROR); die(); }
+if (!extension_loaded('curl')) {
+  trigger_error("OssApi won't work whitout curl extension", E_USER_ERROR); die();
+}
+if (!extension_loaded('SimpleXML')) {
+  trigger_error("OssApi won't work whitout SimpleXML extension", E_USER_ERROR); die();
+}
 
-if (!class_exists('RuntimeException')) { class RuntimeException extends Exception {} }
-if (!class_exists('LogicException')) { class LogicException extends Exception {} }
-if (!class_exists('InvalidArgumentException')) { class InvalidArgumentException extends LogicException {} }
-if (!class_exists('OutOfRangeException')) { class OutOfRangeException extends LogicException {} }
+if (!class_exists('RuntimeException')) {
+  class RuntimeException extends Exception {}
+}
+if (!class_exists('LogicException')) {
+  class LogicException extends Exception {}
+}
+if (!class_exists('InvalidArgumentException')) {
+  class InvalidArgumentException extends LogicException {}
+}
+if (!class_exists('OutOfRangeException')) {
+  class OutOfRangeException extends LogicException {}
+}
 
 /**
  * @file
@@ -36,9 +28,9 @@ if (!class_exists('OutOfRangeException')) { class OutOfRangeException extends Lo
  */
 
 
-class OSS_API {
+class OssApi {
 
-const API_SELECT   = 'select';
+  const API_SELECT   = 'select';
   const API_UPDATE   = 'update';
   const API_DELETE   = 'delete';
   const API_OPTIMIZE = 'optimize';
@@ -108,19 +100,19 @@ const API_SELECT   = 'select';
   /**
    * @param $enginePath The URL to access the OSS Engine
    * @param $index The index name
-   * @return OSS_API
+   * @return OssApi
    */
   public function __construct($enginePath, $index = NULL, $login = NULL, $apiKey = NULL) {
 
-    $parsedPath = OSS_API::parseEnginePath($enginePath, $index);
+    $parsedPath = OssApi::parseEnginePath($enginePath, $index);
     $this->enginePath  = $parsedPath['enginePath'];
     $this->index    = $parsedPath['index'];
 
     $this->credential($login, $apiKey);
 
-  if (!function_exists('OSS_API_Dummy_Function')) {
-    function OSS_API_Dummy_Function() {
-  }
+    if (!function_exists('OssApi_Dummy_Function')) {
+      function OssApi_Dummy_Function() {
+      }
     }
   }
 
@@ -154,8 +146,9 @@ const API_SELECT   = 'select';
 
     // Else parse and affect new credentials
     if (empty($login) || empty($apiKey)) {
-      if (class_exists('OSSException'))
+      if (class_exists('OssException')) {
         throw new UnexpectedValueException('You must provide a login and an api key to use credential.');
+      }
       trigger_error(__CLASS__ . '::' . __METHOD__ . ': You must provide a login and an api key to use credential.', E_USER_ERROR);
       return FALSE;
     }
@@ -165,23 +158,25 @@ const API_SELECT   = 'select';
   }
 
   /**
-   * Return an OSS_Search using the current engine path and index
+   * Return an OssSearch using the current engine path and index
    * @param string $index If provided, this index name is used in place of the one defined in the API instance
-   * @return OSS_Search
-   * This method require the file OSS_Search.class.php. It'll be included if the OSS_Search class don't exist.
-   * It's expected to be in the same directory as OSS_API.class.php.
+   * @return OssSearch
+   * This method require the file OssSearch.class.php. It'll be included if the OssSearch class don't exist.
+   * It's expected to be in the same directory as OssApi.class.php.
    */
   public function select($index = NULL) {
     $index = $index ? $index : $this->index;
-    if (!class_exists('OSS_Search')) require (dirname(__FILE__) . '/OSS_Search.class.php');
-    return new OSS_Search($this->enginePath, $index, NULL, NULL, $this->login, $this->apiKey);
+    if (!class_exists('OssSearch')) {
+      require(dirname(__FILE__) . '/OssSearch.class.php');
+    }
+    return new OssSearch($this->enginePath, $index, NULL, NULL, $this->login, $this->apiKey);
   }
 
   /**
-   * Return an OSS_Search using the current engine path and index
+   * Return an OssSearch using the current engine path and index
    * @param string $index If provided, this index name is used in place of the one defined in the API instance
-   * @return OSS_Search
-   * @deprecated Use OSS_API::select
+   * @return OssSearch
+   * @deprecated Use OssApi::select
    */
   public function search($index = NULL) {
     $index = $index ? $index : $this->index;
@@ -197,7 +192,7 @@ const API_SELECT   = 'select';
    */
   public function optimize($index = NULL) {
     $index = $index ? $index : $this->index;
-    $return = $this->queryServer($this->getQueryURL(OSS_API::API_OPTIMIZE, $index));
+    $return = $this->queryServer($this->getQueryURL(OssApi::API_OPTIMIZE, $index));
     return ($return !== FALSE);
   }
 
@@ -210,7 +205,7 @@ const API_SELECT   = 'select';
    */
   public function reload($index = NULL) {
     $index = $index ? $index : $this->index;
-    $return = $this->queryServer($this->getQueryURL(OSS_API::API_RELOAD, $index));
+    $return = $this->queryServer($this->getQueryURL(OssApi::API_RELOAD, $index));
     return ($return !== FALSE);
   }
 
@@ -234,8 +229,10 @@ const API_SELECT   = 'select';
    */
   public function pattern($patterns, $deleteAll = FALSE, $index = NULL) {
     $index = $index ? $index : $this->index;
-    if (is_array($patterns)) $patterns = implode("\n", $patterns);
-    $return = $this->queryServer($this->getQueryURL(OSS_API::API_PATTERN, $index) . ($deleteAll?'&deleteAll=yes':'&deleteAll=no'), $patterns);
+    if (is_array($patterns)) {
+      $patterns = implode("\n", $patterns);
+    }
+    $return = $this->queryServer($this->getQueryURL(OssApi::API_PATTERN, $index) . ($deleteAll?'&deleteAll=yes':'&deleteAll=no'), $patterns);
     return ($return !== FALSE);
   }
 
@@ -246,7 +243,7 @@ const API_SELECT   = 'select';
    * param string $command The optional command to send to the API call
    * param string[] $options Additional query parameters
    * return string
-   * Use OSS_API::API_* constants for $apiCall.
+   * Use OssApi::API_* constants for $apiCall.
    * Optionals query parameters are provided as a named list:
    * array(
    *   "arg1" => "value1",
@@ -258,9 +255,13 @@ const API_SELECT   = 'select';
     $path = $this->enginePath . '/' . $apiCall;
     $chunks = array();
 
-    if (!empty($index)) $chunks[] = 'use=' . urlencode($index);
+    if (!empty($index)) {
+      $chunks[] = 'use=' . urlencode($index);
+    }
 
-    if (!empty($cmd)) $chunks[] = 'cmd=' . urlencode($cmd);
+    if (!empty($cmd)) {
+      $chunks[] = 'cmd=' . urlencode($cmd);
+    }
 
     // If credential provided, include them in the query url
     if (!empty($this->login)) {
@@ -282,7 +283,7 @@ const API_SELECT   = 'select';
 
   /**
    * Send an xml list of documents to be indexed by the search engine
-   * @param mixed $xml Can be an xml string, a OSS_IndexDocument, a SimpleXMLElement,
+   * @param mixed $xml Can be an xml string, a OssIndexDocument, a SimpleXMLElement,
    *                   a DOMDocument or any object that implement the __toString
    *                   magic method
    * @param string $index If provided, this index name is used in place of the one defined in the API instance
@@ -308,13 +309,14 @@ const API_SELECT   = 'select';
     }
 
     if (!is_string($xml)) {
-      if (class_exists('OSSException'))
+      if (class_exists('OssException')) {
         throw new UnexpectedValueException('String, SimpleXMLElement or DOMDocument was expected for $xml.');
+      }
       trigger_error(check_plain(__CLASS__ . '::' . __METHOD__ . '($xml): String, SimpleXMLElement or DOMDocument was expected for $xml.', E_USER_ERROR));
       return FALSE;
     }
 
-    $return = $this->queryServer($this->getQueryURL(OSS_API::API_UPDATE, $index), $xml);
+    $return = $this->queryServer($this->getQueryURL(OssApi::API_UPDATE, $index), $xml);
     return ($return !== FALSE);
 
   }
@@ -333,7 +335,7 @@ const API_SELECT   = 'select';
       'apiKey'      => $this->apiKey
     );
     return $infos;
-    //return OSS_API::queryServerXML($this->enginePath.'/'.OSS_API::API_ENGINE);
+    //return OssApi::queryServerXML($this->enginePath.'/'.OssApi::API_ENGINE);
   }
 
   /**
@@ -350,10 +352,12 @@ const API_SELECT   = 'select';
       'size'  => NULL
     );
 
-    set_error_handler('OSS_API_Dummy_Function', E_ALL);
-    try { $result = $this->queryServerXML($this->getQueryURL(OSS_API::API_SELECT, $index) . '&q=*:*&rows=0'); }
+    set_error_handler('OssApi_Dummy_Function', E_ALL);
+    try {
+      $result = $this->queryServerXML($this->getQueryURL(OssApi::API_SELECT, $index) . '&q=*:*&rows=0');
+    }
     catch (Exception $e) {
-    $result = FALSE;
+      $result = FALSE;
     }
     restore_error_handler();
     if ($result instanceof SimpleXMLElement) {
@@ -371,16 +375,20 @@ const API_SELECT   = 'select';
   public function isEngineRunning() {
 
     // Check if the select api is answering
-    $rcurl = curl_init($this->getQueryURL(OSS_API::API_SELECT, $index) . '&q=!*:*&rows=0');
+    $rcurl = curl_init($this->getQueryURL(OssApi::API_SELECT, $index) . '&q=!*:*&rows=0');
     curl_setopt($rcurl, CURLOPT_HTTP_VERSION, '1.0');
     curl_setopt($rcurl, CURLOPT_RETURNTRANSFER, TRUE);
     curl_setopt($rcurl, CURLOPT_CONNECTTIMEOUT, 5);
-    set_error_handler('OSS_API_Dummy_Function', E_ALL);
+    set_error_handler('OssApi_Dummy_Function', E_ALL);
     curl_exec($rcurl);
     restore_error_handler();
     $infos = curl_getinfo($rcurl);
-    if ($infos['http_code'] >= 200 && $infos['http_code'] < 300) return TRUE;
-    if ($infos['http_code'] == 0) return NULL;
+    if ($infos['http_code'] >= 200 && $infos['http_code'] < 300) {
+      return TRUE;
+    }
+    if ($infos['http_code'] == 0) {
+      return NULL;
+    }
     return FALSE;
 
   }
@@ -395,9 +403,9 @@ const API_SELECT   = 'select';
   public function isIndexAvailable($index = NULL) {
     $index = $index ? $index : $this->index;
     // Check if the select api is answering
-    set_error_handler('OSS_API_Dummy_Function', E_ALL);
+    set_error_handler('OssApi_Dummy_Function', E_ALL);
     try {
-    $result = $this->queryServerXML($this->getQueryURL(OSS_API::API_SELECT, $index) . '&q=!*:*&rows=0');
+      $result = $this->queryServerXML($this->getQueryURL(OssApi::API_SELECT, $index) . '&q=!*:*&rows=0');
     }
     catch (Exception $e) {
       $result = FALSE;
@@ -411,10 +419,11 @@ const API_SELECT   = 'select';
    * @return string[]
    */
   public function indexList() {
-    $return = $this->queryServerXML($this->getQueryURL(OSS_API::API_SCHEMA, NULL, OSS_API::API_SCHEMA_INDEX_LIST));
+    $return = $this->queryServerXML($this->getQueryURL(OssApi::API_SCHEMA, NULL, OssApi::API_SCHEMA_INDEX_LIST));
     $indexes = array();
-    foreach ($return->index as $index)
+    foreach ($return->index as $index) {
       $indexes[] = (string)$index['name'];
+    }
     return $indexes;
   }
 
@@ -427,9 +436,13 @@ const API_SELECT   = 'select';
   public function createIndex($index, $template = FALSE) {
 
     $params = array("index.name" => $index);
-    if ($template) $params["index.template"] = $template;
-    $return = $this->queryServerXML($this->getQueryURL(OSS_API::API_SCHEMA, NULL, OSS_API::API_SCHEMA_CREATE_INDEX, $params));
-    if ($return === FALSE) return FALSE;
+    if ($template) {
+      $params["index.template"] = $template;
+    }
+    $return = $this->queryServerXML($this->getQueryURL(OssApi::API_SCHEMA, NULL, OssApi::API_SCHEMA_CREATE_INDEX, $params));
+    if ($return === FALSE) {
+      return FALSE;
+    }
     return TRUE;
   }
 
@@ -442,7 +455,7 @@ const API_SELECT   = 'select';
    */
   public function getSchema($index = NULL) {
     $index = $index ? $index : $this->index;
-    return $this->queryServerXML($this->getQueryURL(OSS_API::API_SCHEMA, $index, OSS_API::API_SCHEMA_GET_SCHEMA));
+    return $this->queryServerXML($this->getQueryURL(OssApi::API_SCHEMA, $index, OssApi::API_SCHEMA_GET_SCHEMA));
   }
 
   /**
@@ -455,19 +468,33 @@ const API_SELECT   = 'select';
    * @param string $index If provided, this index name is used in place of the one defined in the API instance
    * @return boolean
    */
-public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NULL, $termVector = NULL, $index = NULL, $default = NULL, $unique = NULL) {
+  public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NULL, $termVector = NULL, $index = NULL, $default = NULL, $unique = NULL) {
     $index = $index ? $index : $this->index;
     $params = array("field.name" => $name);
-    if ($analyzer)   $params["field.analyzer"]   = $analyzer;
-    if ($stored)     $params["field.stored"]     = $stored;
-    if ($indexed)    $params["field.indexed"]    = $indexed;
-    if ($termVector) $params["field.termVector"] = $termVector;
-      if ($termVector) $params["field.default"] = $default;
-        if ($termVector) $params["field.unique"] = $unique;
+    if ($analyzer) {
+      $params["field.analyzer"]   = $analyzer;
+    }
+    if ($stored)  {
+      $params["field.stored"]     = $stored;
+    }
+    if ($indexed) {
+      $params["field.indexed"]    = $indexed;
+    }
+    if ($termVector) {
+      $params["field.termVector"] = $termVector;
+    }
+    if ($termVector) {
+      $params["field.default"] = $default;
+    }
+    if ($termVector) {
+      $params["field.unique"] = $unique;
+    }
 
-    $return = $this->queryServerXML($this->getQueryURL(OSS_API::API_SCHEMA, $index, OSS_API::API_SCHEMA_SET_FIELD, $params));
+    $return = $this->queryServerXML($this->getQueryURL(OssApi::API_SCHEMA, $index, OssApi::API_SCHEMA_SET_FIELD, $params));
 
-    if ($return === FALSE) return FALSE;
+    if ($return === FALSE) {
+      return FALSE;
+    }
     return TRUE;
   }
 
@@ -481,7 +508,7 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
    *
    * Will fail if more than 16 HTTP redirection
    */
-  public static function queryServer($url, $data = NULL, $connexionTimeout = OSS_API::DEFAULT_CONNEXION_TIMEOUT, $timeout = OSS_API::DEFAULT_QUERY_TIMEOUT) {
+  public static function queryServer($url, $data = NULL, $connexionTimeout = OssApi::DEFAULT_CONNEXION_TIMEOUT, $timeout = OssApi::DEFAULT_QUERY_TIMEOUT) {
 
     // Use CURL to post the data
 
@@ -493,11 +520,13 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
     curl_setopt($rcurl, CURLOPT_MAXREDIRS, 16);
     curl_setopt($rcurl, CURLOPT_VERBOSE, TRUE);
 
-    if (is_integer($connexionTimeout) && $connexionTimeout >= 0)
+    if (is_integer($connexionTimeout) && $connexionTimeout >= 0) {
       curl_setopt($rcurl, CURLOPT_CONNECTTIMEOUT, $connexionTimeout);
+    }
 
-    if (is_integer($timeout) && $timeout >= 0)
+    if (is_integer($timeout) && $timeout >= 0) {
       curl_setopt($rcurl, CURLOPT_TIMEOUT, $timeout);
+    }
 
     // Send provided string as POST data. Must be encoded to meet POST specification
     if ($data !== NULL) {
@@ -506,13 +535,14 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
       curl_setopt($rcurl, CURLOPT_HTTPHEADER, array("Content-type: text/xml; charset=utf-8"));
     }
 
-    set_error_handler('OSS_API_Dummy_Function', E_ALL);
+    set_error_handler('OssApi_Dummy_Function', E_ALL);
     $content = curl_exec($rcurl);
     restore_error_handler();
 
     if ($content === FALSE) {
-      if (class_exists('OSSException'))
+      if (class_exists('OssException')) {
         throw new RuntimeException('CURL failed to execute on URL "' . $url . '"');
+      }
       trigger_error(check_plain('CURL failed to execute on URL "' . $url . '"', E_USER_WARNING));
       return FALSE;
     }
@@ -521,16 +551,18 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
 
     // Must check return code
     if ($aResponse['http_code'] >= 400) {
-      if (class_exists('OSSException'))
+      if (class_exists('OssException')) {
         throw new TomcatException($aResponse['http_code'], $content);
+      }
       trigger_error(check_plain('HTTP ERROR ' . $aResponse['http_code'] . ': "' . trim(strip_tags($content)) . '"', E_USER_WARNING));
       return FALSE;
     }
 
     // FIXME Possible problem to identify Locked Index message. Must set a lock on an index to check this
-    if (OSS_API::isOSSError($content)) {
-      if (class_exists('OSSException'))
-        throw new OSSException($content);
+    if (OssApi::isOSSError($content)) {
+      if (class_exists('OssException')) {
+        throw new OssException($content);
+      }
       trigger_error(check_plain('OSS Returned an error: "' . trim(strip_tags($content)) . '"', E_USER_WARNING));
       return FALSE;
     }
@@ -545,19 +577,22 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
    *                     data as POST encoded string or raw XML string.
    * @param int $timeout Optional. Number of seconds before the query fail
    * @return SimpleXMLElement
-   * Use OSS_API::queryServerto retrieve an XML and check its validity
+   * Use OssApi::queryServerto retrieve an XML and check its validity
    */
-  public static function queryServerXML($url, $data = NULL, $connexionTimeout = OSS_API::DEFAULT_CONNEXION_TIMEOUT, $timeout = OSS_API::DEFAULT_QUERY_TIMEOUT) {
-    $result = OSS_API::queryServer($url, $data, $connexionTimeout, $timeout);
-    if ($result === FALSE) return FALSE;
+  public static function queryServerXML($url, $data = NULL, $connexionTimeout = OssApi::DEFAULT_CONNEXION_TIMEOUT, $timeout = OssApi::DEFAULT_QUERY_TIMEOUT) {
+    $result = OssApi::queryServer($url, $data, $connexionTimeout, $timeout);
+    if ($result === FALSE) {
+      return FALSE;
+    }
 
     // Check if we have a valid XML string from the engine
     $lastErrorLevel = error_reporting(0);
-    $xmlResult = simplexml_load_string(OSS_API::cleanUTF8($result));
+    $xmlResult = simplexml_load_string(OssApi::cleanUTF8($result));
     error_reporting($lastErrorLevel);
     if (!$xmlResult instanceof SimpleXMLElement) {
-      if (class_exists('OSSException'))
+      if (class_exists('OssException')) {
         throw new RuntimeException("The search engine didn't return a valid XML");
+      }
       trigger_error("The search engine didn't return a valid XML", E_USER_WARNING);
       return FALSE;
     }
@@ -575,24 +610,29 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
     // Cast $xml param to be a SimpleXMLElement
     // If we don't find the word 'Error' in the xml string, exit immediatly
     if ($xml instanceof SimpleXMLElement) {
-      if (strpos((string)$xml, 'Error') === FALSE)
+      if (strpos((string)$xml, 'Error') === FALSE) {
         return FALSE;
+      }
       $xmlDoc = $xml;
     }
     elseif ($xml instanceof DOMDocument) {
       $xmlDoc = simplexml_import_dom($xml);
-      if (strpos((string)$xmlDoc, 'Error') === FALSE)
+      if (strpos((string)$xmlDoc, 'Error') === FALSE) {
         return FALSE;
+      }
     }
     else {
-      if (strpos((string)$xml, 'Error') === FALSE)
+      if (strpos((string)$xml, 'Error') === FALSE) {
         return FALSE;
+      }
       $previous_error_level = error_reporting(0);
       $xmlDoc = simplexml_load_string($xml);
       error_reporting($previous_error_level);
     }
 
-    if (!$xmlDoc instanceof SimpleXMLElement) return FALSE;
+    if (!$xmlDoc instanceof SimpleXMLElement) {
+      return FALSE;
+    }
 
     // Make sure the Error we found was a Status Error
     foreach ($xmlDoc->entry as $entry) {
@@ -619,8 +659,9 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
       if (isset($urlParams['use'])) {
         $index = $urlParams['use'];
         $enginePath = str_replace('&&', '&', str_replace("use=" . $urlParams['use'], '', $enginePath));
-        if (drupal_substr($enginePath, -1) == '?')
+        if (drupal_substr($enginePath, -1) == '?') {
           $enginePath = drupal_substr($enginePath, 0, -1);
+        }
       }
     }
 
@@ -631,10 +672,10 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
   /**
    * Return a list of supported language. Array is indexed by ISO 639-1 format (en, de, fr, ...)
    * return Array<String>
-   * see OSS_API::$supportedLanguages
+   * see OssApi::$supportedLanguages
    */
   public static function supportedLanguages() {
-    return OSS_API::$supportedLanguages;
+    return OssApi::$supportedLanguages;
   }
 
   /**
@@ -644,8 +685,8 @@ public function setField($name, $analyzer = NULL, $stored = NULL, $indexed = NUL
    */
   public static function escape($string) {
     static $escaping = array(
-      array("+",   "-",   "&&",   "||",  "!",  "(",  ")",  "{",  "}",  "[",  "]",  "^", "\"",  "~",  "*",  "?",  ":", '\\'),
-      array('\+', '\-', '\&\&', '\|\|', '\!', '\(', '\)', '\{', '\}', '\[', '\]', '\^', '\"', '\~', '\*', '\?', '\:', '\\\\')
+    array("+",   "-",   "&&",   "||",  "!",  "(",  ")",  "{",  "}",  "[",  "]",  "^", "\"",  "~",  "*",  "?",  ":", '\\'),
+    array('\+', '\-', '\&\&', '\|\|', '\!', '\(', '\)', '\{', '\}', '\[', '\]', '\^', '\"', '\~', '\*', '\?', '\:', '\\\\')
     );
     return str_replace($escaping[0], $escaping[1], $string);
   }
