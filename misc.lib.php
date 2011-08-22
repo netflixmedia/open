@@ -1,24 +1,4 @@
 <?php
-/*
- *  This file is part of Jaeksoft OpenSearchServer.
- *
- *  Copyright (C) 2008-2009 Emmanuel Keller / Jaeksoft
- *
- *  http://www.open-search-server.com
- *
- *  Jaeksoft OpenSearchServer is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  Jaeksoft OpenSearchServer is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with Jaeksoft OpenSearchServer.  If not, see <http://www.gnu.org/licenses/>.
- */
 
 /**
  * @file
@@ -36,9 +16,12 @@ function config_request_value($key, $default, $request_field = NULL) {
     $value = $_REQUEST[$request_field];
     setcookie($key, $value, time() + 3600 * 365, '/');
   }
-  if (!$value && isset($_COOKIE[$key]))
+  if (!$value && isset($_COOKIE[$key])) {
     $value = $_COOKIE[$key];
-  if (!$value) $value = $default;
+  }
+  if (!$value) {
+    $value = $default;
+  }
   return $value;
 }
 
@@ -110,11 +93,13 @@ abstract class NewsFeedParser extends ArrayObject {
   public static function factory(SimpleXMLElement $xml) {
     // Determine the format of the xml
     // RSS
-    if (isset($xml->channel->item[0]))
+    if (isset($xml->channel->item[0])) {
       return new NewsFeedParser_RSS($xml);
+    }
     // Atom
-    elseif (isset($xml->entry[0]))
+    elseif (isset($xml->entry[0])) {
       return new NewsFeedParser_Atom($xml);
+    }
   }
 
   public function getFeedFormat() {
@@ -190,15 +175,15 @@ class NewsFeedParser_RSS extends NewsFeedParser {
     $this->feedFormat = 'RSS';
 
     // Misc informations
-    $this->channelTitle    = (string)$xml->channel->title;
-    $this->channelSubtitle  = (string)$xml->channel->description;
-    $this->channelHome    = (string)$xml->channel->link;
+    $this->channelTitle    = (string) $xml->channel->title;
+    $this->channelSubtitle  = (string )$xml->channel->description;
+    $this->channelHome    = (string) $xml->channel->link;
 
     // Entries
     $items = (array)$xml->xpath('channel/item');
-    foreach ($items as $item)
+    foreach ($items as $item) {
       $this->append(new NewsFeedParser_RSS_Entry($item));
-
+    }
   }
 
 }
@@ -215,8 +200,9 @@ class NewsFeedParser_RSS_Entry extends NewsFeedParser_Feed_Entry {
 
     // Only RSSS2.0
     $this->author  = (string)$xml->author;
-    if (empty($this->author))
+    if (empty($this->author)) {
       $this->author  = $xml->children("http://purl.org/dc/elements/1.1/")->creator;
+    }
     $this->content = (string)$xml->children('http://purl.org/rss/1.0/modules/content/');
 
   }
@@ -239,8 +225,9 @@ class NewsFeedParser_Atom extends NewsFeedParser {
     $this->channelHome    = preg_replace('/(\.\w+)\/.*$/', '$1', (string)$xml->id);
 
     // Entries
-    foreach ($xml->entry as $item)
+    foreach ($xml->entry as $item) {
       $this->append(new NewsFeedParser_Atom_Entry($item));
+    }
   }
 
 }

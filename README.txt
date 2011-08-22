@@ -61,8 +61,8 @@ Q: When i click Create-index/Save button or reindex button i got an exception wi
 
   A: Check the credential is correct that you have create in OpenSearchServer instance under the privilages tab.
 
-Q: I get an error when I install opensearchserver "Fatal error: OSS_API won't work without 
-   curl extension in "opensearchserver-search\OSS_API.class.php" on line 23"
+Q: I get an error when I install opensearchserver "Fatal error: OssApi won't work without 
+   curl extension in "opensearchserver-search\OssApi.class.php" on line 23"
 
   A: Check that you server is enabled with CURL extension else install it.
   
