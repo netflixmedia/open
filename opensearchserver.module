@@ -3,7 +3,6 @@
 /**
  * Uncomment to display errors during development
  */
-<<<<<<< HEAD
 // error_reporting(E_ALL ^ E_NOTICE);
 // ini_set('display_errors', 'On');
 // if( !ini_get('safe_mode')) {
@@ -12,17 +11,6 @@
 
 require_once 'oss_api.class.php';
 require_once 'oss_misc.lib.php';
-=======
-error_reporting(E_ALL ^ E_NOTICE);
-ini_set('display_errors', 'On');
-
-if( !ini_get('safe_mode')) {
-  set_time_limit(-1);
-}
-
-require_once 'oss_api.class.php';
-require_once 'misc.lib.php';
->>>>>>> bd39ef8af2609f68911c024a6a472d7084aaa847
 require_once 'oss_indexdocument.class.php';
 require_once 'oss_results.class.php';
 require_once 'oss_paging.class.php';
@@ -217,11 +205,7 @@ function opensearchserver_admin_index_form() {
 
   $form['categories'] = array(
     '#type'  => 'fieldset',
-<<<<<<< HEAD
     '#title'  => t('Categories to be indexed'),
-=======
-    '#title'  => t('Taxonomies to be indexed'),
->>>>>>> bd39ef8af2609f68911c024a6a472d7084aaa847
     '#description'  =>  t('Check boxes for the categories you wish to index'),
     '#collapsible'  => TRUE,
     '#collapsed'  => FALSE,
@@ -334,15 +318,12 @@ function opensearchserver_admin_index_form() {
   $form['log'] = array(
     '#type' => 'fieldset',
     '#title' => t('Search Logs'),
-<<<<<<< HEAD
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
   $form['block'] = array(
     '#type' => 'fieldset',
     '#title' => t('Block tool-tip text'),
-=======
->>>>>>> bd39ef8af2609f68911c024a6a472d7084aaa847
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
@@ -366,16 +347,12 @@ function opensearchserver_admin_index_form() {
     '#title' => t('Enable Log for searching.'),
     '#default_value' => $sdetails->log_enable,
   );
-<<<<<<< HEAD
   $form['block']['block_tip'] = array(
     '#type' => 'textfield',
     '#description' => t('Enter the tool tip text to be blocked.'),
     '#title' => t('Enter the tool tip text.'),
     '#default_value' => $sdetails->block_text,
   );
-=======
-
->>>>>>> bd39ef8af2609f68911c024a6a472d7084aaa847
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Create-index / Save'),
@@ -481,7 +458,6 @@ function opensearchserver_populate_db(&$form_state, $serverurl, $indexname, $use
   db_query("
     INSERT INTO `{opensearchserver}` (`serverurl`,  `indexname`,  `username`,  `key`,
        `last_indexed`, `delay`, `filter_enabled`, `signature`, `title_snippet`,
-<<<<<<< HEAD
        `content_snippet`, `url_snippet`, `date`, `date_filter`, `log_enable`, `noresult_filter_enable`,`block_text`)
       VALUES
       ('%s',  '%s',  '%s',  '%s',  '%s',  '%s',  '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s', '%s')",
@@ -490,15 +466,6 @@ function opensearchserver_populate_db(&$form_state, $serverurl, $indexname, $use
       $form_state['values']['signature'], $form_state['values']['title_snippet'], $form_state['values']['content_snippet'],
       $form_state['values']['url_snippet'], $form_state['values']['timestamp'], $form_state['values']['date_filters'],
       $form_state['values']['log_enable'], $form_state['values']['noresult_filter_enable'], $form_state['values']['block_tip']
-=======
-       `content_snippet`, `url_snippet`, `date`, `date_filter`, `log_enable`)
-      VALUES
-      ('%s',  '%s',  '%s',  '%s',  '%s',  '%s',  '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-      $form_state['values']['serverurl'],  $form_state['values']['indexname'],  $form_state['values']['username'],
-      $form_state['values']['key'], '', $form_state['values']['delay'], $form_state['values']['filters'],
-      $form_state['values']['signature'], $form_state['values']['title_snippet'], $form_state['values']['content_snippet'],
-      $form_state['values']['url_snippet'], $form_state['values']['timestamp'], $form_state['values']['date_filters'], $form_state['values']['log_enable']
->>>>>>> bd39ef8af2609f68911c024a6a472d7084aaa847
   );
 
   $types = db_query(db_rewrite_sql("

@@ -101,11 +101,7 @@ function opensearchserver_schema() {
       ),
 
       'content_snippet' => array(
-<<<<<<< HEAD
         'description' => t('The Size of the content Snippet'),
-=======
-        'description' => t('The Size of the conetnt Snippet'),
->>>>>>> bd39ef8af2609f68911c024a6a472d7084aaa847
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
@@ -143,7 +139,6 @@ function opensearchserver_schema() {
         'not null' => TRUE,
         'not null' => TRUE,
       ),
-<<<<<<< HEAD
     'noresult_filter_enable' => array(
         'description' => t('Enabling filters for zero result.'),
         'type' => 'varchar',
@@ -158,8 +153,6 @@ function opensearchserver_schema() {
         'not null' => TRUE,
         'not null' => TRUE,
       ),
-=======
->>>>>>> bd39ef8af2609f68911c024a6a472d7084aaa847
     )
   );
 
