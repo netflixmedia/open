@@ -3,80 +3,87 @@
 /**
  * Uncomment to display errors during development
  */
-error_reporting(E_ALL ^ E_NOTICE);
-ini_set('display_errors', 'On');
+// error_reporting(E_ALL ^ E_NOTICE);
+// ini_set('display_errors', 'On');
+// if( !ini_get('safe_mode')) {
+//   set_time_limit(-1);
+// }
 
-if( !ini_get('safe_mode')) {
-  set_time_limit(-1);
-}
+require_once 'oss_api.class.php';
+require_once 'oss_misc.lib.php';
+require_once 'oss_indexdocument.class.php';
+require_once 'oss_results.class.php';
+require_once 'oss_paging.class.php';
+require_once 'oss_search.class.php';
+require_once 'oss_searchtemplate.class.php';
+require_once 'oss_delete.class.php';
 
-require 'oss_api.class.php';
-require 'misc.lib.php';
-require 'oss_indexdocument.class.php';
-require 'oss_results.class.php';
-require 'oss_paging.class.php';
-require 'oss_search.class.php';
-require 'oss_searchtemplate.class.php';
-require 'oss_delete.class.php';
-
+/**
+ * Implements hook_perm().
+ */
 function opensearchserver_perm() {
   return array('access opensearchserver', 'access opensearchserver search');
 }
 
+/**
+ * Implements hook_menu().
+ */
 function opensearchserver_menu() {
   $items = array();
   $items['admin/settings/opensearchserver'] = array(
     'title'  => 'OpenSearchServer',
     'description'  => 'Settings to access the OpenSearchServer instance from drupal.',
-    'page callback'  => 'opensearchserver_admin_settings',
-    'page arguments'  => array('opensearchserver_settings'),
+    'page callback'  => 'drupal_get_form',
+    'page arguments'  => array('opensearchserver_admin_index_form'),
     'access callback'  => 'user_access',
-    'access arguments'  =>  array('access opensearchserver')
+    'access arguments'  =>  array('access opensearchserver'),
   );
   $items['opensearchserver'] = array(
-       'title'   => 'OpenSearchServer',
+    'title'   => 'OpenSearchServer',
     'description'  => 'This module will integrate OpenSearchServer 1.2 as search engine for Drupal 6.x',
     'page callback'  => 'opensearchserver_view',
-    'access arguments'  => array('access opensearchserver search')
+    'access arguments'  => array('access opensearchserver search'),
   );
   return $items;
 }
 
+/**
+ * Implements hook_theme().
+ */
 function opensearchserver_theme($existing, $type, $theme, $path) {
   return array(
     'opensearchserver_view' => array(
-    'arguments' => array('opensearchserver_data' => NULL),
-    'template' => 'opensearchserver')
+      'arguments' => array('opensearchserver_data' => NULL),
+      'template' => 'opensearchserver',
+    )
   );
-}
-
-function opensearchserver_admin_settings() {
-  return drupal_get_form('opensearchserver_admin_index_form');
 }
 
 function opensearchserver_preprocess_search_theme_form(&$vars, $hook)  {
   $vars['form']['search_theme_form']['#value'] = t('Search this Site');
 }
 
+/**
+ * Implements hook_form_alter().
+ */
 function opensearchserver_form_alter(&$form, $form_state, $form_id) {
   $form_id_processed = $form_id;
-  $arg = arg(NULL, $_GET['q']);
-  if ($arg[2] != NULL) {
-    $value = $arg[2];
-  }
-  else {
-    $value = '';
-  }
+  $value = isset($arg[2]) ? $arg[2] : '';
+
   switch ($form_id_processed) {
 
     case 'search_form':
       $form['basic']['inline']['keys'] = array(
-      '#type' => 'textfield',
-      '#title' => '',
-      '#default_value'  => $value,
-      '#maxlength' => 255);
+        '#type' => 'textfield',
+        '#title' => '',
+        '#default_value'  => $value,
+        '#maxlength' => 255,
+      );
 
-      $form['basic']['inline']['submit'] = array('#type' => 'submit', '#value' => t('Search'));
+      $form['basic']['inline']['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Search'),
+      );
       $form['#validate'][] = 'opensearchserver_validate';
       $form['#submit'][] = 'opensearchserver_submit';
       $form['#token'] = FALSE;
@@ -85,12 +92,16 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
 
     case 'search_theme_form':
       $form['search_theme_form'] = array(
-      '#type' => 'textfield',
-      '#title' => '',
-      '#size' => 15,
-      '#maxlength' => 255);
+        '#type' => 'textfield',
+        '#title' => '',
+        '#size' => 15,
+        '#maxlength' => 255,
+      );
 
-      $form['submit'] = array('#type' => 'submit', '#value' => t('Search'));
+      $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Search'),
+      );
       $form['#submit'][] = 'opensearchserver_submit';
       $form['#token'] = FALSE;
       unset($form['#token']);
@@ -98,11 +109,15 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
 
     case 'search_block_form':
       $form['search_block_form'] = array(
-      '#type' => 'textfield',
-      '#title' => '',
-      '#size' => 15,
-      '#maxlength' => 255);
-      $form['submit'] = array('#type' => 'submit', '#value' => t('Search'));
+        '#type' => 'textfield',
+        '#title' => '',
+        '#size' => 15,
+        '#maxlength' => 255,
+      );
+      $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Search'),
+      );
       $form['#submit'][] = 'opensearchserver_submit';
       $form['#token'] = FALSE;
       unset($form['#token']);
@@ -110,11 +125,19 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
   }
 }
 
+/**
+ * Implements form validation.
+ */
+
 function opensearchserver_validate($form, &$form_state) {
   if (empty($form_state['values']['keys'])) {
     form_set_error('keywords', t('Please enter An Search Term.'));
   }
 }
+
+/**
+ * Implements form submission.
+ */
 
 function opensearchserver_submit($form, &$form_state) {
 
@@ -129,6 +152,10 @@ function opensearchserver_submit($form, &$form_state) {
   }
 }
 
+/**
+ * Implements form for admin menu.
+ */
+
 function opensearchserver_admin_index_form() {
   $details = db_query(db_rewrite_sql("SELECT * FROM {opensearchserver}"));
   $nodetype = db_query(db_rewrite_sql("SELECT DISTINCT * FROM {opensearchserver_type}"));
@@ -142,44 +169,44 @@ function opensearchserver_admin_index_form() {
   $sdetails = db_fetch_object($details);
   $form['details']['serverurl'] = array(
     '#type'  => 'textfield',
-    '#title'  => t('OpenSearchServer URL'),
-    '#description'  => t('No Trailing Slash at last eg:http://example.com:8080 '),
-    '#default_value'  => $sdetails->serverurl,
+    '#title'  => t('OpenSearchServer Location'),
+    '#description'  => t('No trailing slash at end eg:http://example.com:8080 '),
+    '#default_value'  => $sdetails->serverurl
   );
 
   $form['details']['indexname'] = array(
     '#type'  => 'textfield',
-    '#title'  => t('IndexName '),
+    '#title'  => t('OpenSearchServer Index Name '),
     '#description'  => t('Name of the OpenSearchServer Index '),
     '#default_value'  => $sdetails->indexname,
   );
 
   $form['details']['username'] = array(
     '#type'  => 'textfield',
-    '#title'  => t('UserName'),
-    '#description'  => t('The username of OpenSearchServer for authentication '),
+    '#title'  => t('OpenSearchServer User Name'),
+    '#description'  => t('OpenSearchServer user name is used for authentication '),
     '#default_value'  => $sdetails->username,
   );
 
   $form['details']['key'] = array(
     '#type'  => 'textfield',
-    '#title'  => t('Key'),
-    '#description'  => t('The Key of OpenSearchServer for authentication '),
+    '#title'  => t('OpenSearchServer Key'),
+    '#description'  => t('Used for authentication, this key is provided when a new user is  created  in the OpenSearchServer instance.'),
     '#default_value'  => $sdetails->key,
   );
 
   $form['fields'] = array(
     '#type'  => 'fieldset',
-    '#title'  => t('Fields to be Indexed'),
-    '#description'  => t('Enable the Checkbox before Re-indexing '),
+    '#title'  => t(' Fields to be indexed'),
+    '#description'  => t('Checking boxes will include the content types in the index'),
     '#collapsible'  => TRUE,
     '#collapsed'  => FALSE,
   );
 
   $form['categories'] = array(
     '#type'  => 'fieldset',
-    '#title'  => t('Categories to be Indexed'),
-    '#description'  =>  t('Enable the Checkbox before Re-indexing'),
+    '#title'  => t('Categories to be indexed'),
+    '#description'  =>  t('Check boxes for the categories you wish to index'),
     '#collapsible'  => TRUE,
     '#collapsed'  => FALSE,
   );
@@ -190,7 +217,7 @@ function opensearchserver_admin_index_form() {
     while ($types = db_fetch_object($nodetype)) {
       $form['fields'][$types->type] = array(
         '#type' => 'checkbox',
-        '#title' => check_plain($types->type),
+        '#title' => check_plain($types->name),
         '#default_value' => $types->enabled,
       );
     }
@@ -200,7 +227,7 @@ function opensearchserver_admin_index_form() {
 
       $form['fields'][$results->type] = array(
         '#type' => 'checkbox',
-        '#title' => check_plain($results->type)
+        '#title' => check_plain($results->name)
       );
 
     }
@@ -214,18 +241,23 @@ function opensearchserver_admin_index_form() {
 
   $form['fields']['signature'] = array(
       '#type' => 'checkbox',
-      '#description' => t('Enable the Checkbox for Signature '),
+      '#description' => t('Checking this box will include author name in the search result.'),
       '#title' => t('Signature'),
       '#default_value' => $sdetails->signature,
   );
 
   $form['fields']['filters'] = array(
     '#type' => 'checkbox',
-    '#description' => t('Enable the Checkbox to enable filters '),
-    '#title' => t('Enable Filter'),
+    '#description' => t('Checking this box will allow to filter the search results based on Types, Categories and Dates.'),
+    '#title' => t('Enable Faceting'),
     '#default_value' => $sdetails->filter_enabled,
   );
-
+  $form['fields']['noresult_filter_enable'] = array(
+    '#type' => 'checkbox',
+    '#description' => t('Checking this box will display filters when the search result was zero.'),
+    '#title' => t('Enable filters at zero result'),
+    '#default_value' => $sdetails->noresult_filter_enable,
+  );
   $categories_data = db_query(db_rewrite_sql("SELECT * FROM {vocabulary}"));
   $category_count = db_result(db_query(db_rewrite_sql("SELECT COUNT(*) FROM {opensearchserver_categories}")));
   $category_type = db_query(db_rewrite_sql("SELECT DISTINCT * FROM {opensearchserver_categories}"));
@@ -250,29 +282,29 @@ function opensearchserver_admin_index_form() {
 
   $form['snippet'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Maxium Snippet Size'),
+    '#title' => t('Maximum Snippets Size'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
 
   $form['snippet']['title_snippet'] = array(
     '#type' => 'textfield',
-    '#title' => t('Title Snippet Size '),
-    '#description' => t('The Maximum Size of the Title Snippet'),
+    '#title' => t('Title Snippet Length '),
+    '#description' => t('Title Snippet maximum number of characters'),
     '#default_value' => $sdetails->title_snippet,
   );
 
   $form['snippet']['content_snippet'] = array(
     '#type' => 'textfield',
-    '#title' => t('Content Snippet Size '),
-    '#description' => t('The Maximum Size of the Content Snippet'),
+    '#title' => t('Content Snippet Length '),
+    '#description' => t('Content Snippet maximum number of characters'),
     '#default_value' => $sdetails->content_snippet,
   );
 
   $form['snippet']['url_snippet'] = array(
     '#type' => 'textfield',
-    '#title' => t('URL Snippet Size '),
-    '#description' => t('The Maximum Size of the URL Snippet'),
+    '#title' => t('URL Snippet Length '),
+    '#description' => t('URL Snippet maximum number of characters'),
     '#default_value' => $sdetails->url_snippet,
   );
 
@@ -285,36 +317,59 @@ function opensearchserver_admin_index_form() {
 
   $form['log'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Logs'),
+    '#title' => t('Search Logs'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
-
+  $form['block'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Block tool-tip text'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
   $form['date']['timestamp'] = array(
     '#type' => 'select',
-    '#title' => 'Select the Type of Date to be indexed',
-    '#options' => array(createddate => t('Created Date'), changeddate => t('Changed Date')),
+    '#title' => 'Select the Date to include in index',
+    '#options' => array(createddate => t('Creation Date'), changeddate => t('Modification Date')),
     '#default_value' => $sdetails->delay,
   );
 
   $form['date']['date_filters'] = array(
     '#type' => 'checkbox',
-    '#description' => t('Enable the Checkbox to enable Date filter '),
+    '#description' => t('Checking this box will enable Date filtering'),
     '#title' => t('Enable Date Filter'),
     '#default_value' => $sdetails->date_filter,
   );
 
   $form['log']['log_enable'] = array(
     '#type' => 'checkbox',
-    '#description' => t('Enable the Checkbox to enable Log for searching.<br/> The Search logs will be stored in a file called "report_[indexname].[currentDate]" and will be stored in log folder of the index directory.'),
+    '#description' => t('Checking this box will log all Search queries with visitors id for further analysis.<br/> Search logs will be saved in a daily file called "report_[indexname].[currentDate]" <br/>and will be stored in log folder of the index directory.'),
     '#title' => t('Enable Log for searching.'),
     '#default_value' => $sdetails->log_enable,
   );
-
-  $form['submit'] = array('#type' => 'submit', '#value' => t('Create-index / Save'), '#name' => 'save');
-  $form['StartIndexing'] = array('#type' => 'submit', '#value' => t('Re-index site'), '#name' => 'index');
+  $form['block']['block_tip'] = array(
+    '#type' => 'textfield',
+    '#description' => t('Enter the tool tip text to be blocked.'),
+    '#title' => t('Enter the tool tip text.'),
+    '#default_value' => $sdetails->block_text,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Create-index / Save'),
+    '#name' => 'save',
+    );
+  $form['StartIndexing'] = array(
+   '#type' => 'submit',
+   '#value' => t('Re-index site'),
+   '#name' => 'index',
+    );
   return $form;
 }
+
+
+/**
+ * Implements form for admin form validation.
+ */
 
 function opensearchserver_admin_index_form_validate($form_id, &$form_state) {
   if ($form_state['clicked_button']['#name']=='save') {
@@ -327,12 +382,20 @@ function opensearchserver_admin_index_form_validate($form_id, &$form_state) {
   }
 }
 
+/**
+ * Implements the index creation on OpenSearchServer.
+ */
+
 function opensearchserver_create_index($url, $indexname, $username, $key) {
   $ossAPI = new OssApi($url);
   $ossAPI->credential($username, $key);
   $ossAPI->createIndex($indexname);
   return TRUE;
 }
+
+/**
+ * Implements the field creation on schema of OpenSearchServer.
+ */
 
 function opensearchserver_setfields($url,  $indexname,  $username,  $key) {
   $snippet = db_query(db_rewrite_sql("SELECT * FROM {opensearchserver}"));
@@ -376,32 +439,74 @@ function opensearchserver_setfields($url,  $indexname,  $username,  $key) {
   $searchTemplate->setSnippetField("search", "user_email", "70", "b", "1", "NoFragmenter");
 }
 
+/**
+ * Inserts the data from admin to database.
+ */
+
 function opensearchserver_populate_db(&$form_state, $serverurl, $indexname, $username,  $key) {
-  db_query("TRUNCATE TABLE {opensearchserver}");
-  db_query("TRUNCATE TABLE {opensearchserver_type}");
-  db_query("TRUNCATE TABLE {opensearchserver_categories}");
-  db_query("INSERT INTO `{opensearchserver}` (`serverurl`,  `indexname`,  `username`,  `key`, `last_indexed`, `delay`, `filter_enabled`, `signature`, `title_snippet`, `content_snippet`, `url_snippet`, `date`, `date_filter`, `log_enable`) VALUES ('%s',  '%s',  '%s',  '%s',  '%s',  '%s',  '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",  $form_state['values']['serverurl'],  $form_state['values']['indexname'],  $form_state['values']['username'],  $form_state['values']['key'], '', $form_state['values']['delay'], $form_state['values']['filters'], $form_state['values']['signature'], $form_state['values']['title_snippet'], $form_state['values']['content_snippet'], $form_state['values']['url_snippet'], $form_state['values']['timestamp'], $form_state['values']['date_filters'], $form_state['values']['log_enable']);
-  $types = db_query(db_rewrite_sql("SELECT DISTINCT type FROM {node_type}"));
+
+  db_query("
+    TRUNCATE TABLE {opensearchserver}"
+    );
+  db_query("
+    TRUNCATE TABLE {opensearchserver_type}"
+    );
+  db_query("
+    TRUNCATE TABLE {opensearchserver_categories}"
+    );
+
+  db_query("
+    INSERT INTO `{opensearchserver}` (`serverurl`,  `indexname`,  `username`,  `key`,
+       `last_indexed`, `delay`, `filter_enabled`, `signature`, `title_snippet`,
+       `content_snippet`, `url_snippet`, `date`, `date_filter`, `log_enable`, `noresult_filter_enable`,`block_text`)
+      VALUES
+      ('%s',  '%s',  '%s',  '%s',  '%s',  '%s',  '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s', '%s')",
+      $form_state['values']['serverurl'],  $form_state['values']['indexname'],  $form_state['values']['username'],
+      $form_state['values']['key'], '', $form_state['values']['delay'], $form_state['values']['filters'],
+      $form_state['values']['signature'], $form_state['values']['title_snippet'], $form_state['values']['content_snippet'],
+      $form_state['values']['url_snippet'], $form_state['values']['timestamp'], $form_state['values']['date_filters'],
+      $form_state['values']['log_enable'], $form_state['values']['noresult_filter_enable'], $form_state['values']['block_tip']
+  );
+
+  $types = db_query(db_rewrite_sql("
+      SELECT DISTINCT type,name FROM {node_type}"
+  ));
+
   while ($type = db_fetch_object($types)) {
-    db_query("INSERT INTO `{opensearchserver_type}` (`type`,  `enabled`) VALUES ('%s',  '%s')", $type->type, $form_state['values'][$type->type]);
+    db_query("
+    INSERT INTO `{opensearchserver_type}` (`type`, `name`, `enabled`)
+    VALUES ('%s', '%s', '%s')",
+    $type->type, $type->name, $form_state['values'][$type->type]
+  );
   }
-  $categories = db_query(db_rewrite_sql("SELECT DISTINCT vid, name FROM {vocabulary}"));
+  $categories = db_query(db_rewrite_sql("
+    SELECT DISTINCT vid, name FROM {vocabulary}"
+  ));
   while ($category = db_fetch_object($categories)) {
-    db_query("INSERT INTO `{opensearchserver_categories}` (`id`, `categories`,  `enabled`) VALUES ('%s', '%s',  '%s')", $category->vid, $category->name, $form_state['values'][str_replace(' ',  '_',  $category->name)]);
+    db_query("
+    INSERT INTO `{opensearchserver_categories}` (`id`, `categories`,  `enabled`)
+    VALUES ('%s', '%s',  '%s')",
+    $category->vid, $category->name,
+    $form_state['values'][str_replace(' ',  '_',  $category->name)]
+  );
   }
   opensearchserver_setfields($serverurl, $indexname, $username,  $key);
   drupal_set_message(t('The Preferences has been Updated'));
 }
+
+/**
+ * Implements the admin form submission.
+ */
 
 function opensearchserver_admin_index_form_submit($form_id, &$form_state) {
 
   switch ($form_state['clicked_button']['#name']) {
 
     case 'save':
-      $indexname=$form_state['values']['indexname'];
-      $serverurl=$form_state['values']['serverurl'];
-      $username=$form_state['values']['username'];
-      $key=$form_state['values']['key'];
+      $indexname = $form_state['values']['indexname'];
+      $serverurl = $form_state['values']['serverurl'];
+      $username = $form_state['values']['username'];
+      $key = $form_state['values']['key'];
       $ossAPI = new OssApi($serverurl);
       $ossAPI->credential($username, $key);
       if (!$ossAPI->isIndexAvailable($indexname)) {
@@ -420,21 +525,44 @@ function opensearchserver_admin_index_form_submit($form_id, &$form_state) {
   }
 }
 
+/**
+ * Implements the hook cron.
+ */
+
 function opensearchserver_cron() {
-  $getDetails = db_query(db_rewrite_sql("SELECT * FROM {opensearchserver}"));
+
+  $getDetails = db_query(db_rewrite_sql("
+    SELECT * FROM {opensearchserver}"
+    ));
   $serverDetails = db_fetch_object($getDetails);
   $from_time =strtotime(date( 'Y-m-d H:i:s', strtotime($serverDetails->last_indexed)));
   $to_time=strtotime(date('Y-m-d H:i:s', time()));
   $delay=round(abs($to_time - $from_time) / 60);
   if ($delay > $serverDetails->delay) {
-    db_query("UPDATE `{opensearchserver}` SET `last_indexed` = " . date('YmdHis', time()) . " WHERE `serverurl` = " . "'". $serverDetails->serverurl . "'");
+    db_query("
+    UPDATE `{opensearchserver}`
+    SET
+    `last_indexed` = " . date('YmdHis', time()) . "
+     WHERE
+     `serverurl` = " . "'". $serverDetails->serverurl . "'"
+  );
     opensearchserver_get_content__to_index();
   }
   if (!$serverDetails->last_indexed) {
-    db_query("UPDATE `{opensearchserver}` SET `last_indexed` = " . date('YmdHis', time()) . " WHERE `serverurl` = " . "'" . $serverDetails->serverurl . "'");
+    db_query("
+    UPDATE `{opensearchserver}`
+    SET
+    `last_indexed` = " . date('YmdHis', time()) . "
+    WHERE
+    `serverurl` = " . "'" . $serverDetails->serverurl . "'"
+  );
     opensearchserver_get_content__to_index();
   }
 }
+
+/**
+ * Gets the data to be indexed.
+ */
 
 function opensearchserver_get_content__to_index() {
   if (!isset($langcode)) {
@@ -443,7 +571,9 @@ function opensearchserver_get_content__to_index() {
   global $base_url, $url, $user_url;
   global $base_root, $language;
   $path=parse_url($base_root . request_uri());
-  $getDetails = db_query(db_rewrite_sql("SELECT * FROM {opensearchserver}"));
+  $getDetails = db_query(db_rewrite_sql("
+    SELECT * FROM {opensearchserver}"
+    ));
   $serverDetails = db_fetch_object($getDetails);
   $ossEnginePath  = config_request_value('ossEnginePath', $serverDetails->serverurl, 'engineURL');
   $ossEngineConnectTimeOut = config_request_value('ossEngineConnectTimeOut', 5, 'engineConnectTimeOut');
@@ -459,14 +589,23 @@ function opensearchserver_get_content__to_index() {
     $url=$base_url . '/?q=node/';
     $user_url=$base_url . '/?q=user/';
   }
-  $types = db_query(db_rewrite_sql("SELECT DISTINCT type,enabled FROM {opensearchserver_type}"));
+  $types = db_query(db_rewrite_sql("
+    SELECT DISTINCT type,enabled FROM {opensearchserver_type}"
+    ));
   while ($type = db_fetch_object($types)) {
 
     if ($type->enabled == 1) {
-      $categories_check = db_query(db_rewrite_sql("SELECT DISTINCT categories,enabled FROM {opensearchserver_categories}"));
+      $categories_check = db_query(db_rewrite_sql("
+    SELECT DISTINCT categories,enabled FROM {opensearchserver_categories}"
+    ));
       while ($cate_check = db_fetch_object($categories_check)) {
         if ($cate_check->enabled==1) {
-          $count_result=db_query(db_rewrite_sql("SELECT COUNT(*) FROM {node} n, {node_revisions} rev WHERE n.nid = rev.nid AND n.type LIKE" . '"' . $type->type . '"'));
+
+          $count_result=db_query(db_rewrite_sql("
+    SELECT COUNT(*) FROM {node} n, {node_revisions} rev
+    WHERE
+    n.nid = rev.nid AND n.type LIKE" . '"' . $type->type . '"'
+    ));
           $result_count = db_result($count_result);
           for ($i = 0; $i < $result_count; $i++) {
             if ($i != 0) {
@@ -474,22 +613,47 @@ function opensearchserver_get_content__to_index() {
             }
             $j = $i + 100;
             if ($serverDetails->date="createddate") {
-              $sql = 'SELECT node.type,node.nid,node.comment,node.status,node.created,node_revisions.uid,node_revisions.title,node_revisions.body,node_revisions.timestamp ' .
-                     'FROM {node}, {node_revisions} WHERE node.nid = node_revisions.nid AND node.type LIKE' . "'" . $type->type . "'" . 'LIMIT ' . $i . ',' . $j;
-            }
-            else {
-              $sql = 'SELECT node.type,node.nid,node.comment,node.status, node.changed,node_revisions.uid,node_revisions.title,node_revisions.body,node_revisions.timestamp ' .
-                     'FROM {node}, {node_revisions} WHERE node.nid = node_revisions.nid AND node.type LIKE' . "'" . $type->type . "'" . 'LIMIT ' . $i . ',' . $j;
-            }
+              $sql = '
+     SELECT node.type,node.nid,node.comment,node.status,node.created,
+     node_revisions.uid,node_revisions.title,node_revisions.body,node_revisions.timestamp ' .'
+     FROM {node}, {node_revisions}
+     WHERE
+     node.nid = node_revisions.nid
+     AND
+     node.type LIKE' . "'" . $type->type . "'" . 'LIMIT ' . $i . ',' . $j;
+
+  }
+    else {
+              $sql = '
+    SELECT node.type,node.nid,node.comment,node.status, node.changed,
+    node_revisions.uid,node_revisions.title,node_revisions.body,node_revisions.timestamp ' . '
+    FROM {node}, {node_revisions}
+    WHERE
+    node.nid = node_revisions.nid
+     AND
+    node.type LIKE' . "'" . $type->type . "'" . 'LIMIT ' . $i . ',' . $j;
+}
             $result = db_query(db_rewrite_sql($sql));
             $index = new OssIndexDocument();
             while ($resultdoc = db_fetch_object($result)) {
               if ($resultdoc->status == 1) {
-                $taxonomy = db_query(db_rewrite_sql('SELECT * FROM {term_node} WHERE term_node.nid=' . "'" . $resultdoc->nid . "'"));
+                $taxonomy = db_query(db_rewrite_sql('
+                SELECT * FROM {term_node}
+                WHERE
+                term_node.nid=' . "'" . $resultdoc->nid . "'"
+                ));
                 $taxonomyarray = db_fetch_object($taxonomy);
-                $taxonomy_data = db_query(db_rewrite_sql('SELECT * FROM {term_data} WHERE term_data.tid=' . "'" . $taxonomyarray->tid . "'"));
+                $taxonomy_data = db_query(db_rewrite_sql('
+                SELECT * FROM {term_data}
+                WHERE
+                term_data.tid=' . "'" . $taxonomyarray->tid . "'"
+  ));
                 $taxonomyarray_data = db_fetch_object($taxonomy_data);
-                $getusers = db_query(db_rewrite_sql("SELECT name, mail, uid FROM {users} WHERE uid = " . $resultdoc->uid));
+                $getusers = db_query(db_rewrite_sql("
+              SELECT name, mail, uid FROM {users}
+              WHERE
+              uid = " . $resultdoc->uid
+  ));
                 $userdetails = db_fetch_object($getusers);
                 $document = $index->newDocument($language->language);
                 $document->newField('id', $resultdoc->type . '_' . $resultdoc->nid);
@@ -503,7 +667,11 @@ function opensearchserver_get_content__to_index() {
                 $document->newField('taxonomy')->newValue(html_entity_decode($taxonomyarray_data->name, ENT_QUOTES, 'UTF-8'), TRUE);
                 $document->newField('title')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), TRUE);
                 $document->newField('content')->newValue(html_entity_decode($resultdoc->body, ENT_QUOTES, 'UTF-8'), TRUE);
-                $urlalise = db_query(db_rewrite_sql('SELECT * FROM {url_alias} WHERE url_alias.src=' . "'" . 'node/' . $resultdoc->nid . "'"));
+                $urlalise = db_query(db_rewrite_sql('
+              SELECT * FROM {url_alias}
+              WHERE
+              url_alias.src=' . "'" . 'node/' . $resultdoc->nid . "'"
+  ));
                 $urlalise_object = db_fetch_object($urlalise);
                 if ($urlalise_object) {
                   $url_alise= $urlalise_object->dst;
@@ -518,7 +686,11 @@ function opensearchserver_get_content__to_index() {
                 $document->newField('user_email', $userdetails->mail);
                 $document->newField('user_url', $user_url . $userdetails->uid);
                 if ($resultdoc->comment > 0) {
-                  $comments = db_query(db_rewrite_sql("SELECT cid,nid,subject,timestamp,comment FROM {comments} WHERE comments.nid = " . $resultdoc->nid));
+                  $comments = db_query(db_rewrite_sql("
+              SELECT cid,nid,subject,timestamp,comment FROM {comments}
+              WHERE
+              comments.nid = " . $resultdoc->nid
+  ));
                   while ($commentdoc = db_fetch_object($comments)) {
                     $document = $index->newDocument($language->language);
                     $document->newField('id', 'comment_' . $commentdoc->cid);
@@ -543,6 +715,10 @@ function opensearchserver_get_content__to_index() {
   }
 }
 
+/**
+ * Method to start indexing.
+ */
+
 function opensearchserver_start_indexing($index, $serverDetails, $ossEnginePath, $ossEngineIndex) {
   $server = new OssApi($ossEnginePath, $ossEngineIndex);
   $server->credential($serverDetails->username, $serverDetails->key);
@@ -552,8 +728,14 @@ function opensearchserver_start_indexing($index, $serverDetails, $ossEnginePath,
   $server->optimize();
 }
 
+/**
+ * View an search result in opensearchserver.tpl.php
+ */
+
 function opensearchserver_view() {
   global $base_url;
+  $block_tool = db_query(db_rewrite_sql("SELECT noresult_filter_enable,block_text FROM {opensearchserver}"));
+  $block_tool_tip=db_fetch_object($block_tool);
   $arg = arg(NULL, $_GET['q']);
   $result=opensearchserver_get_search_result($arg[2]);
   $opensearchserver_data['paging']=opensearchserver_paging($result);
@@ -561,10 +743,16 @@ function opensearchserver_view() {
   $opensearchserver_data['q']=$arg[2];
   $opensearchserver_data['result']=$result;
   $opensearchserver_data['base_url']=$base_url;
+  $opensearchserver_data['block_text']= $block_tool_tip->block_text;
+  $opensearchserver_data['no_filter']= $block_tool_tip->noresult_filter_enable;
   $opensearchserver_data['form']=drupal_get_form('opensearchserver_page_form');
   $opensearchserver_data['time_stamp']=$timestamp_array;
   return theme('opensearchserver_view', $opensearchserver_data);
 }
+
+/**
+ * Paging for SearchResults.
+ */
 
 function opensearchserver_paging($result) {
 if ($result != NULL) {
@@ -616,10 +804,16 @@ function opensearchserver_create_url_snippet($url, $end) {
   }
 }
 
+/**
+ * Get the search result from the index.
+ */
+
 function opensearchserver_get_search_result($query) {
   if ($query) {
     global $user;
-    $getDetails = db_query("SELECT * FROM {opensearchserver}");
+    $getDetails = db_query("
+      SELECT * FROM {opensearchserver}"
+    );
     $serverDetails = db_fetch_object($getDetails);
     $start = isset($_REQUEST['p']) ? $_REQUEST['p'] : NULL;
     $start = isset($start) ? max(0, $start - 1) * 10 : 0;
@@ -677,6 +871,10 @@ function opensearchserver_get_search_result($query) {
   return $result;
 }
 
+/**
+ * Implements drupal search form.
+ */
+
 function opensearchserver_page_form() {
   $arg = arg(NULL, $_GET['q']);
   if ($arg[2] != NULL) {
@@ -696,6 +894,10 @@ function opensearchserver_page_form() {
   return $form;
 }
 
+/**
+ * Implements drupal search form submit.
+ */
+
 function opensearchserver_page_form_submit($form_id, &$form_state) {
   $form_state['redirect'] = 'opensearchserver/search/'. $form_state['values']['q'];
 }
@@ -713,4 +915,3 @@ function opensearchserver_block($op = 'list', $delta = 0, $edit = array()) {
     return $block;
   }
 }
-

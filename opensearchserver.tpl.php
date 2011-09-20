@@ -12,11 +12,13 @@ print $opensearchserver_data['form'];?>
     $signature = db_query("SELECT signature,filter_enabled,url_snippet,date_filter FROM {opensearchserver}");
     $signaturedetails = db_fetch_object($signature);
     $oss_result = new OssResults($opensearchserver_data['result'], NULL);
-    if ($oss_result->getResultFound() <= 0) {
+    if ($oss_result->getResultFound() <= 0 ||  $opensearchserver_data['q'] == $opensearchserver_data['block_text']) {
       ?>
 <table width="100%" border="0">
   <tr>
-    <td width="20%">
+	<?php if ($opensearchserver_data['no_filter'] == 1) {?>
+     <td width="20%">
+ <div align="left" style="margin-top: -20px;">
    <div class="oss_facet">Type <br/>
      <div class="oss_facet_type">
      <ul>
@@ -43,9 +45,14 @@ print $opensearchserver_data['form'];?>
      </ul>
      </div>
      </div>
+     </div>
        </td>
+<? }?>
     <td width="80%">
-      <div align="left" style="margin-top: 30px;">
+      <div align="left" style="margin-top: 10px;">
+			<?php if ($opensearchserver_data['q'] == $opensearchserver_data['block_text']) { ?>
+			<p>To be processed a query can't be empty and should contains valid words.</p>
+			<?php }?>
 			<p> No documents containing all your search terms were found.</p>
 			<p>Your Search Keyword <b><?php print $opensearchserver_data['q']; ?></b> did not match any document</p><br/><p>Suggestions:</p>
 			 <p>- Make sure all words are spelled correctly.</p>
