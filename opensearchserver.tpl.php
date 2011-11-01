@@ -104,9 +104,10 @@ print $opensearchserver_data['form'];?>
   </li>
    <?php
   foreach ($oss_result->getFacet('taxonomy') as $taxonomys) {
+
   $taxonomy_name = $taxonomys['name'];
     ?>
-   <li> <a href="/?q=opensearchserver/search/<?php print urlencode($opensearchserver_data['q']);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $values . ')';?> </a></li>
+   <li> <a href="/?q=opensearchserver/search/<?php print urlencode($opensearchserver_data['q']);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></li>
     <?php
   }
 }
@@ -199,3 +200,4 @@ print $opensearchserver_data['form'];?>
   <?php
   }
 }
+
