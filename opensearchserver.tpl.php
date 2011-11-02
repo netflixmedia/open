@@ -2,14 +2,22 @@
 
 /**
  * @file
- * Class to access OpenSearchServer API
+ * Template file to show search result
  */
 
 print $opensearchserver_data['form'];?>
 <div id="results">
 <?php
   if (isset($opensearchserver_data['result']) && $opensearchserver_data['result'] instanceof SimpleXMLElement) {
-    $signature = db_query("SELECT signature,filter_enabled,url_snippet,date_filter FROM {opensearchserver}");
+    $signature = db_query("
+    SELECT
+    signature,
+    filter_enabled,
+    url_snippet,
+    date_filter
+    FROM
+    {opensearchserver}"
+    );
     $signaturedetails = db_fetch_object($signature);
     $oss_result = new OssResults($opensearchserver_data['result'], NULL);
     if ($oss_result->getResultFound() <= 0 ||  $opensearchserver_data['q'] == $opensearchserver_data['block_text']) {
@@ -26,7 +34,7 @@ print $opensearchserver_data['form'];?>
          <div class="oss_facet_all">
           <a href="/?q=opensearchserver/search/<?php check_plain(check_plain(drupal_urlencode(print $opensearchserver_data['q'])));?>">Everything</a>
           </div>
-       </li><br/>
+       </li>
      </ul>
      </div>
      <div class="oss_facet_categories"><br/>
@@ -36,7 +44,7 @@ print $opensearchserver_data['form'];?>
        <div class="oss_facet_all">
          <a href="/?q=opensearchserver/search/<?php  check_plain(drupal_urlencode(print $opensearchserver_data['q'])); ?>">Everything</a>
         </div>
-        </li><br/>
+        </li>
         </ul>
      </div>
      <div class="oss_facet_categories"><br/>
