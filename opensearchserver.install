@@ -17,7 +17,13 @@ function opensearchserver_install() {
  */
 function opensearchserver_uninstall() {
   drupal_uninstall_schema('opensearchserver');
-  db_query('DELETE FROM {system} WHERE name = "opensearchserver"');
+  db_query('
+  DELETE
+  FROM
+  {system}
+  WHERE
+  name = "opensearchserver"'
+  );
 
 }
 
@@ -209,3 +215,4 @@ function opensearchserver_schema() {
 
   return $schema;
 }
+

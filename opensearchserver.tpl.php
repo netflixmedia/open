@@ -2,14 +2,22 @@
 
 /**
  * @file
- * Class to access OpenSearchServer API
+ * Template file to show search result
  */
 
 print $opensearchserver_data['form'];?>
 <div id="results">
 <?php
   if (isset($opensearchserver_data['result']) && $opensearchserver_data['result'] instanceof SimpleXMLElement) {
-    $signature = db_query("SELECT signature,filter_enabled,url_snippet,date_filter FROM {opensearchserver}");
+    $signature = db_query("
+    SELECT
+    signature,
+    filter_enabled,
+    url_snippet,
+    date_filter
+    FROM
+    {opensearchserver}"
+    );
     $signaturedetails = db_fetch_object($signature);
     $oss_result = new OssResults($opensearchserver_data['result'], NULL);
     if ($oss_result->getResultFound() <= 0 ||  $opensearchserver_data['q'] == $opensearchserver_data['block_text']) {
@@ -24,9 +32,9 @@ print $opensearchserver_data['form'];?>
      <ul>
        <li>
          <div class="oss_facet_all">
-          <a href="/?q=opensearchserver/search/<?php drupal_urlencode(print $opensearchserver_data['q']);?>">Everything</a>
+          <a href="/?q=opensearchserver/search/<?php check_plain(check_plain(drupal_urlencode(print $opensearchserver_data['q'])));?>">Everything</a>
           </div>
-       </li><br/>
+       </li>
      </ul>
      </div>
      <div class="oss_facet_categories"><br/>
@@ -34,14 +42,14 @@ print $opensearchserver_data['form'];?>
      <ul>
       <li>
        <div class="oss_facet_all">
-         <a href="/?q=opensearchserver/search/<?php  drupal_urlencode(print $opensearchserver_data['q']); ?>">Everything</a>
+         <a href="/?q=opensearchserver/search/<?php  check_plain(drupal_urlencode(print $opensearchserver_data['q'])); ?>">Everything</a>
         </div>
-        </li><br/>
+        </li>
         </ul>
      </div>
      <div class="oss_facet_categories"><br/>
      Date
-     <ul><li><div class="oss_facet_all">   <a href="/?q=opensearchserver/search/<?php  drupal_urlencode(print $opensearchserver_data['q']); ?>">Any Time</a></div></li>
+     <ul><li><div class="oss_facet_all">   <a href="/?q=opensearchserver/search/<?php  check_plain(drupal_urlencode(print $opensearchserver_data['q'])); ?>">Any Time</a></div></li>
      </ul>
      </div>
      </div>
@@ -67,7 +75,7 @@ print $opensearchserver_data['form'];?>
   }
   else {
   $result_time = (float)$opensearchserver_data['result']->result['time'] / 1000;?>
-  <div align="left"><?php print $oss_result->getResultFound(); ?> documents found (<?php print $result_time;?> seconds)</div>
+  <div align="left"><?php print check_plain($oss_result->getResultFound()); ?> documents found (<?php print check_plain($result_time);?> seconds)</div>
   <?php  $max = ($oss_result->getResultStart() + $oss_result->getResultRows() > $oss_result->getResultFound()) ? $oss_result->getResultFound() : $oss_result->getResultStart() + $oss_result->getResultRows();?>
   <table width="100%" border="0">
   <tr>
@@ -80,7 +88,7 @@ print $opensearchserver_data['form'];?>
   <ul>
   <li>
   <div class="oss_facet_all">
-  <a href="/?q=opensearchserver/search/<?php drupal_urlencode(print $opensearchserver_data['q']);?>">Everything</a><br/></div></li>
+  <a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a><br/></div></li>
   <?php
   foreach ($oss_result->getFacet('type') as $values) {
     $value = $values['name'];
@@ -99,14 +107,15 @@ print $opensearchserver_data['form'];?>
   <ul>
   <li>
   <div class="oss_facet_all">
-  <a href="/?q=opensearchserver/search/<?php  drupal_urlencode(print $opensearchserver_data['q']); ?>">Everything</a>
+  <a href="/?q=opensearchserver/search/<?php  check_plain(drupal_urlencode(print $opensearchserver_data['q'])); ?>">Everything</a>
   </div>
   </li>
    <?php
   foreach ($oss_result->getFacet('taxonomy') as $taxonomys) {
+
   $taxonomy_name = $taxonomys['name'];
     ?>
-   <li> <a href="/?q=opensearchserver/search/<?php print urlencode($opensearchserver_data['q']);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $values . ')';?> </a></li>
+   <li> <a href="/?q=opensearchserver/search/<?php print urlencode($opensearchserver_data['q']);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></li>
     <?php
   }
 }
@@ -117,7 +126,7 @@ print $opensearchserver_data['form'];?>
   ?>
   <div class="oss_facet_categories"><br/>
   Date
-  <ul><li><div class="oss_facet_all">   <a href="/?q=opensearchserver/search/<?php  drupal_urlencode(print $opensearchserver_data['q']); ?>">Any Time</a></div></li>
+  <ul><li><div class="oss_facet_all">   <a href="/?q=opensearchserver/search/<?php  check_plain(drupal_urlencode(print $opensearchserver_data['q'])); ?>">Any Time</a></div></li>
      <?php
   foreach ($opensearchserver_data['time_stamp'] as $timestamp) {
     ?>
@@ -143,17 +152,17 @@ print $opensearchserver_data['form'];?>
       $type = stripslashes($oss_result->getField($i, 'type', TRUE));
       $url = stripslashes($oss_result->getField($i, 'url', TRUE));
 ?>
-<div class="oss_result_field1"><a href="<?php print $url;?>"><?php print $subject;?></a> </div>
+<div class="oss_result_field1"><a href="<?php print check_url($url);?>"><?php print $subject;?></a> </div>
 <div class="oss_result_field2"><?php print $comment;?></div>
 <?php
     if ($signaturedetails->signature==1) {?>
-      <div class="oss_result_field3"><a href="<?php print $url;?>"><?php print $comment;?></a>&nbsp;&nbsp;&nbsp;&nbsp;
+      <div class="oss_result_field3"><a href="<?php print check_url($url);?>"><?php print $comment;?></a>&nbsp;&nbsp;&nbsp;&nbsp;
 	<?php print $type;?> By <a href="<?php print $user_url;?>"><?php print $user;?></a>
     </div>
   <?php
   }
   else {?>
-    <div class="oss_result_field3"><a href="<?php print $url?>"><?php print $url?> </a></div><br/>
+    <div class="oss_result_field3"><a href="<?php print check_url($url)?>"><?php print check_url($url)?> </a></div><br/>
   <?php }
  ?>
 
@@ -167,17 +176,17 @@ print $opensearchserver_data['form'];?>
   $type = stripslashes($oss_result->getField($i, 'type', TRUE));
   $url = stripslashes($oss_result->getField($i, 'url', TRUE));
 ?>
-      <div class="oss_result_field1"><a href="<?php print $url;?>"><?php print $title;?></a> </div>
+      <div class="oss_result_field1"><a href="<?php print check_url($url);?>"><?php print $title;?></a> </div>
       <div class="oss_result_field2"><?php print $content;?></div>
       <?php
           if ($signaturedetails->signature==1) {?>
-            <div class="oss_result_field3"><a href="<?php print $url?>"><?php print opensearchserver_create_url_snippet($url, $signaturedetails->url_snippet);?> </a>&nbsp;&nbsp;&nbsp;&nbsp;
-      	<?php print $type;?> By <a href="<?php print $user_url;?>"><?php print $user;?></a>
+            <div class="oss_result_field3"><a href="<?php print check_url($url)?>"><?php print opensearchserver_create_url_snippet($url, $signaturedetails->url_snippet);?> </a>&nbsp;&nbsp;&nbsp;&nbsp;
+      	<?php print check_plain($type);?> By <a href="<?php print check_url($user_url);?>"><?php check_plain(print $user);?></a>
           </div>
         <?php
         }
         else {?>
-            <div class="oss_result_field3"><a href="<?php print $url?>"><?php print opensearchserver_create_url_snippet($url, $signaturedetails->url_snippet);?> </a></div>
+            <div class="oss_result_field3"><a href="<?php print check_url($url)?>"><?php print opensearchserver_create_url_snippet($url, $signaturedetails->url_snippet);?> </a></div>
           <?php }
     }
   }
@@ -185,7 +194,7 @@ print $opensearchserver_data['form'];?>
   <br/>
   <?php
   foreach ($opensearchserver_data['paging'] as $page) {?>
-    <span class="<?php print $page['style']; ?>"> <a href="<?php print  $opensearchserver_data['base_url'] . '/opensearchserver/search/' . $opensearchserver_data['q'] . $page['url'];?>"><?php print $page['label']; ?></a></span>&nbsp;&nbsp;&nbsp;
+    <span class="<?php print $page['style']; ?>"> <a href="<?php print  check_url($opensearchserver_data['base_url']) . '/opensearchserver/search/' . $opensearchserver_data['q'] . $page['url'];?>"><?php print $page['label']; ?></a></span>&nbsp;&nbsp;&nbsp;
   <?php }
   ?>
   </div>
@@ -199,3 +208,4 @@ print $opensearchserver_data['form'];?>
   <?php
   }
 }
+
