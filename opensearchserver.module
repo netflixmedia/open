@@ -1,23 +1,26 @@
 <?php
 
 /**
- * Uncomment to display errors during development
+ * Implements hook_init().
  */
-// error_reporting(E_ALL ^ E_NOTICE);
-// ini_set('display_errors', 'On');
-// if( !ini_get('safe_mode')) {
-//   set_time_limit(-1);
-// }
-
-require_once 'lib/oss_api.class.php';
-require_once 'lib/oss_misc.lib.php';
-require_once 'lib/oss_indexdocument.class.php';
-require_once 'lib/oss_results.class.php';
-require_once 'lib/oss_paging.class.php';
-require_once 'lib/oss_search.class.php';
-require_once 'lib/oss_searchtemplate.class.php';
-require_once 'lib/oss_delete.class.php';
-
+function opensearchserver_init() {
+  if (module_exists('libraries')) {
+    $library = libraries_get_path('opensearchserver');
+    require_once $library .'/oss_api.class.php';
+    require_once $library .'/oss_misc.lib.php';
+    require_once $library .'/oss_indexdocument.class.php';
+    require_once $library .'/oss_results.class.php';
+    require_once $library .'/oss_paging.class.php';
+    require_once $library .'/oss_search.class.php';
+    require_once $library .'/oss_searchtemplate.class.php';
+    require_once $library .'/oss_delete.class.php';
+  }
+else {
+    $msg= 'The OpenSearchServer library could not be found Or The Library API not found.';
+    drupal_set_message(check_plain($msg), $type = 'error');
+    return FALSE;
+  }
+}
 /**
  * Implements hook_perm().
  */
@@ -1106,4 +1109,3 @@ function opensearchserver_block($op = 'list', $delta = 0, $edit = array()) {
     return $block;
   }
 }
-
