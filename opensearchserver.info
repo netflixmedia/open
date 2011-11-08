@@ -3,4 +3,6 @@ description = This module will integrate OpenSearchServer 1.2 as search engine f
 core = 6.x
 package = OpenSearchServer
 dependencies[] = search
+dependencies[] = libraries
 stylesheets[all][] = opensearchserver.css
+
