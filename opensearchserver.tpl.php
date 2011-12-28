@@ -6,6 +6,7 @@
  */
 
 print $opensearchserver_data['form'];?>
+
 <div id="results">
 <?php
   if (isset($opensearchserver_data['result']) && $opensearchserver_data['result'] instanceof SimpleXMLElement) {
@@ -20,44 +21,97 @@ print $opensearchserver_data['form'];?>
     );
     $signaturedetails = db_fetch_object($signature);
     $oss_result = new OssResults($opensearchserver_data['result'], NULL);
+    $oss_result_facet = new OssResults($opensearchserver_data['result_facet'], NULL);
     if ($oss_result->getResultFound() <= 0 ||  $opensearchserver_data['q'] == $opensearchserver_data['block_text']) {
       ?>
 <table width="100%" border="0">
   <tr>
 	<?php if ($opensearchserver_data['no_filter'] == 1) {?>
-     <td width="20%">
- <div align="left" style="margin-top: -20px;">
-   <div class="oss_facet">Type <br/>
-     <div class="oss_facet_type">
-     <ul>
-       <li>
-         <div class="oss_facet_all">
-          <a href="/?q=opensearchserver/search/<?php check_plain(check_plain(drupal_urlencode(print $opensearchserver_data['q'])));?>">Everything</a>
-          </div>
-       </li>
-     </ul>
-     </div>
-     <div class="oss_facet_categories"><br/>
-     Categories
-     <ul>
-      <li>
-       <div class="oss_facet_all">
-         <a href="/?q=opensearchserver/search/<?php  check_plain(drupal_urlencode(print $opensearchserver_data['q'])); ?>">Everything</a>
-        </div>
-        </li>
-        </ul>
-     </div>
-     <div class="oss_facet_categories"><br/>
-     Date
-     <ul><li><div class="oss_facet_all">   <a href="/?q=opensearchserver/search/<?php  check_plain(drupal_urlencode(print $opensearchserver_data['q'])); ?>">Any Time</a></div></li>
-     </ul>
-     </div>
-     </div>
-     </div>
-       </td>
+<td width="25%">
+  <div class="oss_facet">Type
+  <div class="oss_facet_type">
+  <ul>
+<?php
+if($opensearchserver_data['fq']==NULL && $opensearchserver_data['tq']==NULL && $opensearchserver_data['ts']==NULL || $oss_result->getResultFound() <= 0){ ?>
+  <li><b><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></b></li>
+<?php }
+else {?>
+  <li><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></li>
+  <?php
+}
+  foreach ($oss_result_facet->getFacet('type') as $values) {
+    $value = $values['name'];
+    if($value == $opensearchserver_data['fq']) { ?>
+ <li> <b><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($opensearchserver_data['q']);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></b></li>
+	<?php }
+    else {
+    ?>
+   <li> <a href="/?q=opensearchserver/search/<?php print drupal_urlencode($opensearchserver_data['q']);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></li>
+    <?php
+  }
+  }
+  ?>
+   </ul>
+  </div>
+  <div class="oss_facet_categories"><br/>
+  Categories
+  <ul>
+  <li>
+  <?php
+if($opensearchserver_data['fq'] == NULL && $opensearchserver_data['tq'] == NULL && $opensearchserver_data['ts'] == NULL || $oss_result->getResultFound() <= 0){?>
+  <li><b><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></b></li>
+<?php } else {
+  ?>
+  <li><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></li>
+<?php
+  }
+  if ($oss_result_facet->getFacet('taxonomy')) {
+  foreach ($oss_result_facet->getFacet('taxonomy') as $taxonomys) {
+  $taxonomy_name = $taxonomys['name'];
+    if($taxonomy_name == $opensearchserver_data['tq']) { ?>
+    	  <li><b> <a href="/?q=opensearchserver/search/<?php print urlencode($opensearchserver_data['q']);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></b></li>
+<?php } else {
+    ?>
+   <li> <a href="/?q=opensearchserver/search/<?php print urlencode($opensearchserver_data['q']);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></li>
+    <?php
+  }
+  }
+}
+  ?>
+  </ul>
+  </div>
+  <?php   if ($signaturedetails->date_filter) {
+  ?>
+  <div class="oss_facet_categories"><br/>
+  Date
+  <ul><?php
+if($opensearchserver_data['fq']==NULL && $opensearchserver_data['tq']==NULL && $opensearchserver_data['ts']==NULL){?>
+  <li><b><a id="oss_facet" href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></b></li>
+<?php } else {?>
+  <li><a id="oss_facet" href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></li>
+  <?php
+    }
+if ($oss_result_facet->getResultFound() > 0) {
+  foreach ($opensearchserver_data['time_stamp'] as $timestamp) {
+  	   if($timestamp == $opensearchserver_data['ts']) { ?>
+  	   	 <li> <b><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($opensearchserver_data['q']);?>/&ts=<?php print drupal_urlencode($timestamp);?>"> <?php print drupal_ucfirst(check_plain($timestamp));?> </a></b></li>
+<?php }
+    else {
+    ?>
+   <li> <a href="/?q=opensearchserver/search/<?php print drupal_urlencode($opensearchserver_data['q']);?>/&ts=<?php print drupal_urlencode($timestamp);?>"> <?php print drupal_ucfirst(check_plain($timestamp));?> </a></li>
+    <?php
+    }
+  }
+ }
+ }
+  ?>
+  </ul>
+  </div>
+  </div>
+  </td>
 <? }?>
     <td width="80%">
-      <div align="left" style="margin-top: 10px;">
+      <div align="left" class="oss_error">
 			<?php if ($opensearchserver_data['q'] == $opensearchserver_data['block_text']) { ?>
 			<p>To be processed a query can't be empty and should contains valid words.</p>
 			<?php }?>
@@ -82,41 +136,54 @@ print $opensearchserver_data['form'];?>
   <?php
   if ($signaturedetails->filter_enabled) {
   ?>
-  <td width="20%">
+  <td width="25%">
   <div class="oss_facet">Type
   <div class="oss_facet_type">
   <ul>
-  <li>
-  <div class="oss_facet_all">
-  <a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a><br/></div></li>
+<?php
+if($opensearchserver_data['fq']==NULL && $opensearchserver_data['tq']==NULL && $opensearchserver_data['ts']==NULL){?>
+  <li><b><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></b></li>
+<?php } else {?>
+  <li><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></li>
   <?php
-  foreach ($oss_result->getFacet('type') as $values) {
+}
+  foreach ($oss_result_facet->getFacet('type') as $values) {
     $value = $values['name'];
+    if($value == $opensearchserver_data['fq']) { ?>
+ <li> <b><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($opensearchserver_data['q']);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></b></li>
+	<?php }
+    else {
     ?>
    <li> <a href="/?q=opensearchserver/search/<?php print drupal_urlencode($opensearchserver_data['q']);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></li>
     <?php
+  }
   }
   ?>
    </ul>
   </div>
   <?php
-  if ($oss_result->getFacet('taxonomy')) {
+  if ($oss_result_facet->getFacet('taxonomy')) {
   ?>
   <div class="oss_facet_categories"><br/>
   Categories
   <ul>
   <li>
-  <div class="oss_facet_all">
-  <a href="/?q=opensearchserver/search/<?php  check_plain(drupal_urlencode(print $opensearchserver_data['q'])); ?>">Everything</a>
-  </div>
-  </li>
+  <?php
+if($opensearchserver_data['fq']==NULL && $opensearchserver_data['tq']==NULL && $opensearchserver_data['ts']==NULL){?>
+  <li><b><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></b></li>
+<?php } else {?>
+  <li><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></li>
    <?php
-  foreach ($oss_result->getFacet('taxonomy') as $taxonomys) {
-
+}
+  foreach ($oss_result_facet->getFacet('taxonomy') as $taxonomys) {
   $taxonomy_name = $taxonomys['name'];
+    if($taxonomy_name == $opensearchserver_data['tq']) { ?>
+    	  <li><b> <a href="/?q=opensearchserver/search/<?php print urlencode($opensearchserver_data['q']);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></b></li>
+<?php } else {
     ?>
    <li> <a href="/?q=opensearchserver/search/<?php print urlencode($opensearchserver_data['q']);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></li>
     <?php
+  }
   }
 }
   ?>
@@ -126,20 +193,30 @@ print $opensearchserver_data['form'];?>
   ?>
   <div class="oss_facet_categories"><br/>
   Date
-  <ul><li><div class="oss_facet_all">   <a href="/?q=opensearchserver/search/<?php  check_plain(drupal_urlencode(print $opensearchserver_data['q'])); ?>">Any Time</a></div></li>
-     <?php
+  <ul><?php
+if($opensearchserver_data['fq']==NULL && $opensearchserver_data['tq']==NULL && $opensearchserver_data['ts']==NULL){?>
+  <li><b><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></b></li>
+<?php } else {?>
+  <li><a href="/?q=opensearchserver/search/<?php check_plain(drupal_urlencode(print $opensearchserver_data['q']));?>">Everything</a></li>
+  <?php
+    }
   foreach ($opensearchserver_data['time_stamp'] as $timestamp) {
+  	   if($timestamp == $opensearchserver_data['ts']) { ?>
+  	   	 <li> <b><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($opensearchserver_data['q']);?>/&ts=<?php print drupal_urlencode($timestamp);?>"> <?php print drupal_ucfirst(check_plain($timestamp));?> </a></b></li>
+<?php }
+    else {
     ?>
    <li> <a href="/?q=opensearchserver/search/<?php print drupal_urlencode($opensearchserver_data['q']);?>/&ts=<?php print drupal_urlencode($timestamp);?>"> <?php print drupal_ucfirst(check_plain($timestamp));?> </a></li>
     <?php
   }
+}
   ?>
   </ul>
   </div>
   </div>
   </td>
   <?php }}?>
-  <td width="80%">
+  <td width="75%">
   <div class="oss_results">
   <?php
   for ($i = $oss_result->getResultStart(); $i < $max; $i++) {
@@ -194,7 +271,7 @@ print $opensearchserver_data['form'];?>
   <br/>
   <?php
   foreach ($opensearchserver_data['paging'] as $page) {?>
-    <span class="<?php print $page['style']; ?>"> <a href="<?php print  check_url($opensearchserver_data['base_url']) . '/opensearchserver/search/' . $opensearchserver_data['q'] . $page['url'];?>"><?php print $page['label']; ?></a></span>&nbsp;&nbsp;&nbsp;
+    <span class="<?php print $page['style']; ?>"> <a href="<?php print $page['url'];?>"><?php print $page['label']; ?></a></span>&nbsp;&nbsp;&nbsp;
   <?php }
   ?>
   </div>
@@ -208,4 +285,3 @@ print $opensearchserver_data['form'];?>
   <?php
   }
 }
-

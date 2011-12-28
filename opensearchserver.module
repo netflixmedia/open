@@ -42,7 +42,7 @@ function opensearchserver_menu() {
     'access arguments'  =>  array('access opensearchserver'),
   );
   $items['opensearchserver'] = array(
-    'title'   => 'OpenSearchServer',
+    'title'   => 'OpenSearchServer search',
     'description'  => 'This module will integrate OpenSearchServer 1.2 as search engine for Drupal 6.x.x',
     'page callback'  => 'opensearchserver_view',
     'access arguments'  => array('access opensearchserver search'),
@@ -696,7 +696,23 @@ SQL;
   }
 
 }
-
+/**
+ * Delete all documents from the index.
+ */
+function delete_all() {
+  $query = <<<SQL
+     SELECT serverurl,
+    `indexname`,
+    `username`,
+    `key`
+    FROM {opensearchserver}
+SQL;
+  $get_server_details = db_query($query);
+  $server_details = db_fetch_object($get_server_details);
+  $deleteAPI = new OssDelete($server_details->serverurl, $server_details->indexname);
+  $deleteAPI->credential($server_details->username, $server_details->key);
+  $deleteAPI->delete('*:*');
+}
 /**
  * Gets the data to be indexed.
  */
@@ -732,9 +748,6 @@ SQL;
   $ossEnginePath  = config_request_value('ossEnginePath', $serverDetails->serverurl, 'engineURL');
   $ossEngineConnectTimeOut = config_request_value('ossEngineConnectTimeOut', 5, 'engineConnectTimeOut');
   $ossEngineIndex = config_request_value('ossEngineIndex', $serverDetails->indexname, 'engineIndex');
-  $deleteAPI = new OssDelete($serverDetails->serverurl, $serverDetails->indexname);
-  $deleteAPI->credential($serverDetails->username, $serverDetails->key);
-  $deleteAPI->delete('*:*');
   if (variable_get('clean_url', '0')) {
     $url=$base_url . '/node/';
     $user_url=$base_url . '/user/';
@@ -930,11 +943,19 @@ function opensearchserver_view() {
   );
   $block_tool_tip=db_fetch_object($block_tool);
   $arg = arg(NULL, $_GET['q']);
-  $result=opensearchserver_get_search_result($arg[2]);
+  $tq = isset($_REQUEST['tq']) ? $_REQUEST['tq'] : NULL;
+  $fq = isset($_REQUEST['fq']) ? $_REQUEST['fq'] : NULL;
+  $ts = isset($_REQUEST['ts']) ? $_REQUEST['ts'] : NULL;
+  $result=opensearchserver_get_search_result($arg[2],true);
+  $result_facet=opensearchserver_get_search_result($arg[2],false);
   $opensearchserver_data['paging']=opensearchserver_paging($result);
   $timestamp_array = array("past24" => "Past 24 hours", "pastweek" => "Past week", "pastmonth" => "Past month", "pastyear" => "Past year");
   $opensearchserver_data['q']=$arg[2];
+  $opensearchserver_data['tq'] = $tq;
+  $opensearchserver_data['fq'] = $fq;
+  $opensearchserver_data['ts'] = $ts;
   $opensearchserver_data['result']=$result;
+  $opensearchserver_data['result_facet']=$result_facet;
   $opensearchserver_data['base_url']=$base_url;
   $opensearchserver_data['block_text']= $block_tool_tip->block_text;
   $opensearchserver_data['no_filter']= $block_tool_tip->noresult_filter_enable;
@@ -1001,7 +1022,7 @@ function opensearchserver_create_url_snippet($url, $end) {
  * Get the search result from the index.
  */
 
-function opensearchserver_get_search_result($query) {
+function opensearchserver_get_search_result($query,$facet) {
   if ($query) {
     global $user;
     $getDetails = db_query("
@@ -1031,6 +1052,7 @@ function opensearchserver_get_search_result($query) {
     }
     $search->facet('type', 1);
     $search->facet('taxonomy', 1);
+  if($facet) {
     $filter=$_REQUEST['fq'];
     if ($filter) {
       if ($filter != 'All') {
@@ -1060,6 +1082,7 @@ function opensearchserver_get_search_result($query) {
         }
       }
     }
+}
     $result = $search->query($query)->template('search')->execute(5);
   }
   return $result;

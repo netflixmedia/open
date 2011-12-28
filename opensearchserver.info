@@ -5,4 +5,3 @@ package = OpenSearchServer
 dependencies[] = search
 dependencies[] = libraries
 stylesheets[all][] = opensearchserver.css
-
