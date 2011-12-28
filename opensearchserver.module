@@ -632,6 +632,7 @@ function opensearchserver_admin_index_form_submit($form_id, &$form_state) {
       opensearchserver_populate_db($form_state, $serverurl, $indexname, $username, $key);
       break;
     case 'index':
+      delete_all();
       $batch = array(
         'title' => t('Indexing the document'),
         'operations' => array(array('opensearchserver_get_content__to_index', array(''))),
