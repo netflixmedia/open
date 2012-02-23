@@ -8,11 +8,11 @@ Key Features like
   * Filter search results by Facet Field,
   * Search through every type of document,
   * Easy to set up with just filling a form.
+  * Autocomplete feature.
 
 INSTALLATION
 ------------
   Prerequisite:
-    * Java 5 or higher.
     * PHP 5 or higher.
     * OpenSearchServer 1.2 or higher
     * Drupal 6.x

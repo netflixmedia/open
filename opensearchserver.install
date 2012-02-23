@@ -17,14 +17,6 @@ function opensearchserver_install() {
  */
 function opensearchserver_uninstall() {
   drupal_uninstall_schema('opensearchserver');
-  db_query('
-  DELETE
-  FROM
-  {system}
-  WHERE
-  name = "opensearchserver"'
-  );
-
 }
 
 /**
@@ -32,7 +24,7 @@ function opensearchserver_uninstall() {
  */
 function opensearchserver_schema() {
   $schema['opensearchserver'] = array(
-    'description' => t('The base table for saved articles.'),
+    'description' => t('OpenSearchServer settings'),
     'fields' => array(
       'serverurl' => array(
         'description' => t('The Server Url of opensearchserver.'),
@@ -43,7 +35,7 @@ function opensearchserver_schema() {
       ),
 
       'indexname' => array(
-        'description' => t('The Index Name Of SearchServer Instant.'),
+        'description' => t('The Index Name Of SearchServer instance.'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
@@ -145,19 +137,33 @@ function opensearchserver_schema() {
         'not null' => TRUE,
         'not null' => TRUE,
       ),
-    'noresult_filter_enable' => array(
+      'noresult_filter_enable' => array(
         'description' => t('Enabling filters for zero result.'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
         'not null' => TRUE,
       ),
-    'block_text' => array(
+      'block_text' => array(
         'description' => t('Stop words not to be searched.'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
         'not null' => TRUE,
+      ),
+      'autocomplete_index' => array(
+          'description' => t('The index name of autocomplete'),
+          'type' => 'varchar',
+          'length' => '255',
+          'not null' => TRUE,
+          'not null' => TRUE,
+      ),
+      'autocomplete_query' => array(
+          'description' => t('The name of the query template'),
+          'type' => 'varchar',
+          'length' => '255',
+          'not null' => TRUE,
+          'not null' => TRUE,
       ),
     )
   );
@@ -212,7 +218,6 @@ function opensearchserver_schema() {
       ),
     ),
   );
-
   return $schema;
 }
 
