@@ -46,7 +46,7 @@ function getTarget(event) {
 	}
 }
 
-function autosuggest(event) {
+function autosuggest(event,clean_url) {
 	getTarget(event);
 	var keynum;
 	if(window.event) { // IE
@@ -87,8 +87,10 @@ function autosuggest(event) {
 			setAutocomplete('');
 			return;
 	}
-
-	xmlHttp.open("GET", '/opensearchserver/autocomplete/?query=' + str, true);
+	if (typeof (clen_url) == "undefined" || clean_url == 0) 
+			xmlHttp.open("GET", '/?q=opensearchserver/autocomplete/&query=' + str, true);
+		else 
+			xmlHttp.open("GET", '/opensearchserver/autocomplete/?query=' + str, true);
 	xmlHttp.onreadystatechange = handleAutocomplete;
 	xmlHttp.send(null);
 	return true;

@@ -55,40 +55,7 @@ $query_categories = <<<SQL
 SQL;
   return db_query($query_categories);
 }
-/**
- * Implements drupal search form.
- */
 
-function opensearchserver_page_form() {
-$settings = db_fetch_object(get_settings_query());
-  $arg = arg(NULL, $_GET['q']);
-  if ($arg[2] != NULL) {
-    $value = $arg[2];
-  }
-  else {
-    $value='';
-  }
-  $form['basic']['inline'] = array('#prefix' => '<div class="container-inline">', '#suffix' => '</div><div id="autocomplete"></div>');
-  if ($settings->autocomplete_index && $settings->autocomplete_query) {
-    $form['basic']['inline']['q'] = array(
-    '#type' => 'textfield',
-    '#title' => '',
-    '#default_value' => $value,
-    '#maxlength' => 255,
-    '#attributes' => array('onkeyup' => 'return autosuggest(event)', 'autocomplete' => 'off'),
-    );
-  }
-  else {
-    $form['basic']['inline']['q'] = array(
-        '#type' => 'textfield',
-        '#title' => '',
-        '#default_value' => $value,
-        '#maxlength' => 255,
-    );
-  }
-  $form['basic']['inline']['submit'] = array('#type' => 'submit', '#value' => t('Search'));
-  return $form;
-}
 /**
  * Implementing OpenSearchServer admin form for settings.
  */
@@ -186,7 +153,7 @@ $settings = db_fetch_object(get_settings_query());
 
   $form['autocomplete']['autocomplete_query'] = array(
       '#type'  => 'textfield',
-      '#title'  => t('Autosuggest Query Name'),
+      '#title'  => t('Autosuggest Query Template Name'),
       '#description'  => t('Name of the AutoComplete QueryTemplate Name '),
       '#default_value'  => check_plain($settings->autocomplete_query),
   );
@@ -351,22 +318,65 @@ $settings = db_fetch_object(get_settings_query());
   );
   return $form;
 }
+
+/**
+ * Implements drupal search form.
+ */
+
+function opensearchserver_page_form() {
+$settings = db_fetch_object(get_settings_query());
+  $arg = arg(NULL, $_GET['q']);
+  if ($arg[2] != NULL) {
+    $value = $arg[2];
+  }
+  else {
+    $value='';
+  }
+  $form['basic']['inline'] = array('#prefix' => '<div class="container-inline">', '#suffix' => '</div><div id="autocomplete"></div>');
+  if ($settings->autocomplete_index && $settings->autocomplete_query) {
+    $clean_url = variable_get('clean_url', '0');
+    $form['basic']['inline']['q'] = array(
+    '#type' => 'textfield',
+    '#title' => '',
+    '#default_value' => $value,
+    '#maxlength' => 255,
+    '#attributes' => array('onkeyup' => 'return autosuggest(event,'. $clean_url .')', 'autocomplete' => 'off'),
+    );
+  }
+  else {
+    $form['basic']['inline']['q'] = array(
+        '#type' => 'textfield',
+        '#title' => '',
+        '#default_value' => $value,
+        '#maxlength' => 255,
+    );
+  }
+  $form['basic']['inline']['submit'] = array('#type' => 'submit', '#value' => t('Search'));
+  return $form;
+}
+
 /**
  * Implementing form validation for OpenSearchServer admin settings.
  */
 
 function opensearchserver_admin_validate($form_id, &$form_state) {
+  $index_name = $form_state['values']['indexname'];
+  $server_url = $form_state['values']['serverurl'];
+  $username = $form_state['values']['username'];
+  $key = $form_state['values']['key'];
+  $autocomplete_index = $form_state['values']['autocomplete_index'];
+  $autocomplete_query = $form_state['values']['autocomplete_query'];
   if ($form_state['clicked_button']['#name']=='save') {
-    if (empty($form_state['values']['indexname'])) {
-      form_set_error('keywords', t('Please enter the Index Name.'));
+    if (empty($index_name)) {
+      form_set_error('Index name', t('Please enter a valid index name / Bad credential to login to server'));
     }
-    if (empty($form_state['values']['serverurl'])) {
-      form_set_error('keywords', t('Please enter the Serverurl'));
+    if (empty($server_url)) {
+      form_set_error('Serverurl', t('Please enter a valid server url / Bad credential to login to server'));
     }
-      if (!empty($form_state['values']['autocomplete_index'])) {
-        $oss_api = get_oss_api(trim($form_state['values']['serverurl']), trim($form_state['values']['username']), trim($form_state['values']['key']), NULL);
-            if (!$oss_api->isIndexAvailable(trim($form_state['values']['autocomplete_index']))) {
-                form_set_error('keywords', t('Please enter a valid autocomplete index'));
+      if (!empty($autocomplete_index) && !empty($autocomplete_query)) {
+          $oss_api = get_oss_api($server_url, $username, $key, NULL);
+            if (!$oss_api->isIndexAvailable($autocomplete_index, $autocomplete_query)) {
+            form_set_error('Autocomplete', t('Please enter a valid autocomplete index and query template/ Bad credential to login to server'));
         }
     }
   }
@@ -386,17 +396,21 @@ function get_oss_api($serverurl, $username, $key, $indexname) {
   $oss_api->credential($username, $key);
   return $oss_api;
 }
+
 /**
  * Creating an index in OpenSearchServer instance
  */
+
 function create_index($serverurl, $indexname, $username, $key) {
   $oss_api = get_oss_api($serverurl, $username, $key, '');
   $oss_api->createIndex($indexname);
   return TRUE;
 }
+
 /**
  * Delete all documents from the index.
  */
+
 function delete_all() {
 $delete_query = <<<SQL
      SELECT serverurl,

@@ -6,15 +6,11 @@
 
 function opensearchserver_autocomplete() {
   $query=isset($_REQUEST['query']) ? $_REQUEST['query'] : NULL;
-  $get_details = db_query("
-        SELECT *
-        FROM {opensearchserver}"
-  );
-  $server_details = db_fetch_object($get_details);
-  if ($server_details->autocomplete_index && $server_details->autocomplete_query) {
-  //Add the autocomplete javascript
-  drupal_add_js(drupal_get_path('module', 'OpenSearchServer') . '/js/opensearchserver.js');
-  $vars['scripts'] = drupal_get_js();
+    $get_details = db_query("
+      SELECT *
+      FROM {opensearchserver}"
+    );
+    $server_details = db_fetch_object($get_details);
     $escapechars = array('\\', '^', '~', ':', '(', ')', '{', '}', '[', ']' , '&&', '||', '!', '*', '?');
     foreach ($escapechars as $escchar) {
       $query = str_replace($escchar, ' ', $query);
@@ -23,14 +19,23 @@ function opensearchserver_autocomplete() {
     $search = new OssSearch($server_details->serverurl, $server_details->autocomplete_index, 10, 0);
     $search->credential($server_details->username, $server_details->key);
     $result = $search->query($query)->template($server_details->autocomplete_query)->execute(5);
-    $results = new OSSResults($result);
-    if ($results->getResultFound() == 0) {
-      return;
+    if (isset($result) && $result instanceof SimpleXMLElement) {
+      $results = new OSSResults($result);
+      if ($results->getResultFound() == 0) {
+        return;
+      }
+      if ($results->getResultFound() > 10) {
+        $end = 10;
+      }
+      else{
+        $end = $results->getResultFound();
+      }
+    for ($i = 0; $i < $end; $i++) {
+      $suggest = stripslashes(strip_tags($results->getField($i, 'expression', FALSE)));
+      if ($i > 0) {
+        echo "\n";
+      }
+      echo trim($suggest);
     }
-  for ($i = 0; $i < 10; $i++) {
-    $suggest = stripslashes(strip_tags($results->getField($i, 'expression', TRUE)));
-    echo $suggest;
-    echo "\r\n";
   }
-  }
-  }
+}

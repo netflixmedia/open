@@ -14,15 +14,15 @@ print $opensearchserver_data['form'];
   $oss_result = new OssResults($opensearchserver_data['result'], NULL);
   $oss_result_facet = new OssResults($opensearchserver_data['result_facet'], NULL);
   $search_query = $opensearchserver_data['q'];
-  if ($oss_result->getResultFound() > 0) {
+  if ($oss_result->getResultFound() > 0 && $search_query != $opensearchserver_data['block_text']) {
   $result_time = (float)$opensearchserver_data['result']->result['time'] / 1000;?>
     <div align="left"><?php print check_plain($oss_result->getResultFound()); ?> documents found (<?php print check_plain($result_time);?> seconds)</div>
     <?php  $max = ($oss_result->getResultStart() + $oss_result->getResultRows() > $oss_result->getResultFound()) ? $oss_result->getResultFound() : $oss_result->getResultStart() + $oss_result->getResultRows();
   }
-  if ($opensearchserver_data['filter_enabled'] == 1 && $oss_result->getResultFound() <= 0 && $opensearchserver_data['no_filter'] == 1) {
+  if ($opensearchserver_data['filter_enabled'] == 1 && $oss_result->getResultFound() <= 0 && $opensearchserver_data['no_filter'] == 1 && $search_query != $opensearchserver_data['block_text']) {
   $filter_result = TRUE;
   }
-  elseif ($opensearchserver_data['filter_enabled'] == 1 && $oss_result->getResultFound() > 0) {
+  elseif ($opensearchserver_data['filter_enabled'] == 1 && $oss_result->getResultFound() > 0 && $search_query != $opensearchserver_data['block_text']) {
     $filter_result = TRUE;
   }
   else {
@@ -35,7 +35,7 @@ print $opensearchserver_data['form'];
   <div class="oss_facet_type">Type
   <ul>
 <?php
-if ($opensearchserver_data['fq'] == NULL && $opensearchserver_data['tq'] == NULL && $opensearchserver_data['ts'] == NULL || $oss_result->getResultFound() <= 0) {
+    if ($opensearchserver_data['fq'] == NULL && $opensearchserver_data['tq'] == NULL && $opensearchserver_data['ts'] == NULL &&  $oss_result_facet >= 0|| $oss_result->getResultFound() <= 0 && $oss_result_facet <= 0) {
   $facet_everything = TRUE;
 }
 else {
@@ -45,11 +45,11 @@ print generate_facet_everything($facet_everything, $search_query);
   foreach ($oss_result_facet->getFacet('type') as $values) {
     $value = $values['name'];
     if ($value == $opensearchserver_data['fq']) { ?>
-      <li><b><a href="?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></b></li>
+      <li><b><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></b></li>
 	<?php }
     else {
     ?>
-   <li><a href="?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></li>
+   <li><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></li>
     <?php
   }
   }
@@ -66,11 +66,11 @@ print generate_facet_everything($facet_everything, $search_query);
   foreach ($oss_result_facet->getFacet('taxonomy') as $taxonomys) {
   $taxonomy_name = $taxonomys['name'];
     if ($taxonomy_name == $opensearchserver_data['tq']) { ?>
-    	  <li><b> <a href="?q=opensearchserver/search/<?php print urlencode($search_query);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></b></li>
-<?php }
+    	  <li><b> <a href="/?q=opensearchserver/search/<?php print urlencode($search_query);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></b></li>
+<?php  }
 else {
     ?>
-   <li><a href="?q=opensearchserver/search/<?php print urlencode($search_query);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></li>
+   <li><a href="/?q=opensearchserver/search/<?php print urlencode($search_query);?>/&tq=<?php print drupal_urlencode($taxonomy_name);?>"> <?php print drupal_ucfirst(check_plain($taxonomy_name)) . '(' .  $taxonomys . ')';?> </a></li>
     <?php
   }
   }
@@ -88,15 +88,15 @@ print generate_facet_everything($facet_everything, $search_query);
 if ($oss_result_facet->getResultFound() > 0) {
   foreach ($opensearchserver_data['time_stamp'] as $timestamp) {
     if ($timestamp == $opensearchserver_data['ts']) { ?>
-       <li><b><a href="?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&ts=<?php print drupal_urlencode($timestamp);?>"> <?php print drupal_ucfirst(check_plain($timestamp));?> </a></b></li>
+       <li><b><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&ts=<?php print drupal_urlencode($timestamp);?>"> <?php print drupal_ucfirst(check_plain($timestamp));?> </a></b></li>
 <?php }
     else {
     ?>
-   <li><a href="?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&ts=<?php print drupal_urlencode($timestamp);?>"> <?php print drupal_ucfirst(check_plain($timestamp));?> </a></li>
+   <li><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&ts=<?php print drupal_urlencode($timestamp);?>"> <?php print drupal_ucfirst(check_plain($timestamp));?> </a></li>
     <?php
     }
   }
-}
+  }
 }
   ?>
   </ul>
@@ -118,7 +118,7 @@ if ($oss_result_facet->getResultFound() > 0) {
           <p>- Try more general keywords.</p>
           </div>
           <?php }
-    else {
+        else {
   for ($i = $oss_result->getResultStart(); $i < $max; $i++) {
     $category = stripslashes($oss_result->getField($i, 'type', TRUE));
     if ($category=="comments") {
@@ -186,7 +186,8 @@ if ($oss_result_facet->getResultFound() > 0) {
   </div>
       <?php  }?>
 	</td>
-<?php }?>
+<?php
+}?>
 </tr>
 </table>
 </div>

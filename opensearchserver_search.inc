@@ -127,8 +127,8 @@ function opensearchserver_search() {
   $fq = isset($_REQUEST['fq']) ? $_REQUEST['fq'] : NULL;
   $ts = isset($_REQUEST['ts']) ? $_REQUEST['ts'] : NULL;
   $opensearchserver_data['q']=$arg[2];
-  $result = opensearchserver_get_search_result($arg[2] , TRUE);
-  $result_facet=opensearchserver_get_search_result($arg[2] , FALSE);
+  $result=opensearchserver_get_search_result($arg[2], TRUE);
+  $result_facet=opensearchserver_get_search_result($arg[2], FALSE);
   $opensearchserver_data['paging']=opensearchserver_paging($result);
   $timestamp_array = array("past24" => "Past 24 hours", "pastweek" => "Past week", "pastmonth" => "Past month", "pastyear" => "Past year");
   $opensearchserver_data['tq'] = $tq;
@@ -154,20 +154,20 @@ function opensearchserver_search() {
 
 function opensearchserver_paging($result) {
   if ($result != NULL) {
-    $oss_paging = new oss_paging($result, 'r', 'p');
-    $paging_arrary = array();
+    $oss_paging = new OssPaging($result, 'r', 'p');
+    $paging_array = array();
     if (isset($oss_paging) && $oss_paging->getResultTotal() >= 1) {
       if ($oss_paging->getResultLow() > 0) {
         $style='oss_pager_first';
         $label = 'First';
         $url = $oss_paging->getPageBaseURI() . '1';
-        $paging_arrary[] = array('style' => $style, 'label' => $label, 'url' => $url);
+        $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
       }
       if ($oss_paging->getResultPrev() < $oss_paging->getResultCurrentPage()) {
         $style='oss_pager_prev';
         $label = 'Previous';
         $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultPrev() + 1);
-        $paging_arrary[] = array('style' => $style, 'label' => $label, 'url' => $url);
+        $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
       }
       for ($i = $oss_paging->getResultLow(); $i < $oss_paging->getResultHigh(); $i++) {
         $style='oss_pager_number';
@@ -179,16 +179,16 @@ function opensearchserver_paging($result) {
           $label = $i + 1;
           $url = $oss_paging->getPageBaseURI() . $label;
         }
-        $paging_arrary[] = array('style' => $style, 'label' => $label, 'url' => $url);
+        $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
       }
       if ($oss_paging->getResultNext() > $oss_paging->getResultCurrentPage()) {
         $style='oss_pager_next';
         $label = 'Next';
         $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultNext() + 1);
-        $paging_arrary[] = array('style' => $style, 'label' => $label, 'url' => $url);
+        $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
       }
     }
-    return $paging_arrary;
+    return $paging_array;
   }
 }
 
@@ -206,7 +206,7 @@ function opensearchserver_create_url_snippet($url, $end) {
  * Get the search result from the index.
  */
 
-function opensearchserver_get_search_result($query , $facet) {
+function opensearchserver_get_search_result($query, $facet) {
   if ($query) {
     global $user;
     $get_details = db_query("
@@ -272,8 +272,6 @@ function opensearchserver_get_search_result($query , $facet) {
   return $result;
 }
 
-
-
 /**
  * Implements drupal search form submit.
  */
@@ -293,6 +291,6 @@ return $output;
 /**
  * Generate url for everything in facet
  */
-  function generate_url_everything($query) {
-    return '<a id="oss_facet" href="/?q=opensearchserver/search/'. drupal_urlencode($query) .'">Everything</a>';
-  }
+function generate_url_everything($query) {
+  return '<a id="oss_facet" href="/?q=opensearchserver/search/'. drupal_urlencode($query) .'">Everything</a>';
+}
