@@ -1,6 +1,0 @@
-name = OpenSearchServer
-description = This module will integrate OpenSearchServer 1.2 as search engine for Drupal 6.x
-core = 6.x
-package = OpenSearchServer
-dependencies[] = search
-dependencies[] = libraries
