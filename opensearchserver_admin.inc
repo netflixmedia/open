@@ -505,7 +505,7 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
       `autocomplete_query`
     )
     VALUES
-      ('%s',  '%s',  '%s',  '%s',  '%s',  '%s',  '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
+      ('%s',  '%s',  '%s',  '%s',  '%s',  '%d',  '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%s', '%s', '%s')",
   check_url($form_state['values']['serverurl']),
   check_plain($form_state['values']['indexname']),
   check_plain($form_state['values']['username']),
@@ -537,7 +537,7 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
     )
     VALUES
     (
-    '%s', '%s', '%s'
+    '%s', '%s', '%d'
     )",
     check_plain($type->type), check_plain($type->name), check_plain($form_state['values'][$type->type])
     );
@@ -559,7 +559,7 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
     )
     VALUES
     (
-    '%s', '%s',  '%s')",
+    '%s', '%s',  '%d')",
     check_plain($category->vid), check_plain($category->name),
     check_plain($form_state['values'][str_replace(' ',  '_',  $category->name)])
     );

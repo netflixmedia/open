@@ -31,14 +31,12 @@ function opensearchserver_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'not null' => TRUE,
       ),
 
       'indexname' => array(
         'description' => t('The Index Name Of SearchServer instance.'),
         'type' => 'varchar',
         'length' => '255',
-        'not null' => TRUE,
         'not null' => TRUE,
       ),
 
@@ -47,14 +45,12 @@ function opensearchserver_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'not null' => TRUE,
       ),
 
       'key' => array(
         'description' => t('The key for authentication.'),
         'type' => 'varchar',
         'length' => '255',
-        'not null' => TRUE,
         'not null' => TRUE,
       ),
 
@@ -63,54 +59,47 @@ function opensearchserver_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'not null' => TRUE,
       ),
 
       'delay' => array(
         'description' => t('The indexing delay.'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+        'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
 
       'filter_enabled' => array(
         'description' => t('Enabling the filter type.'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+        'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
 
       'signature' => array(
         'description' => t('The Signature of the post or page'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+        'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
 
       'title_snippet' => array(
         'description' => t('The Size of the title Snippet'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+        'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
 
       'content_snippet' => array(
         'description' => t('The Size of the content Snippet'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+        'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
 
       'url_snippet' => array(
         'description' => t('The Size of the URL Snippet'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+        'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
 
@@ -119,29 +108,25 @@ function opensearchserver_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'not null' => TRUE,
       ),
 
       'date_filter' => array(
         'description' => t('Enabling Filter for date.'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+        'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
 
       'log_enable' => array(
         'description' => t('Enabling log for searching.'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+       'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
       'noresult_filter_enable' => array(
         'description' => t('Enabling filters for zero result.'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+       'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
       'block_text' => array(
@@ -149,21 +134,18 @@ function opensearchserver_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'not null' => TRUE,
       ),
       'autocomplete_index' => array(
           'description' => t('The index name of autocomplete'),
           'type' => 'varchar',
           'length' => '255',
-          'not null' => TRUE,
-          'not null' => TRUE,
+        'not null' => TRUE,
       ),
       'autocomplete_query' => array(
           'description' => t('The name of the query template'),
           'type' => 'varchar',
           'length' => '255',
-          'not null' => TRUE,
-          'not null' => TRUE,
+        'not null' => TRUE,
       ),
     )
   );
@@ -175,19 +157,16 @@ function opensearchserver_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'not null' => TRUE,
       ),
   'name' => array(
         'description' => t('The name of the fields.'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'not null' => TRUE,
       ),
       'enabled' => array(
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+       'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       )
     ),
@@ -200,20 +179,17 @@ function opensearchserver_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'not null' => TRUE,
       ),
 
       'categories' => array(
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'not null' => TRUE,
       ),
 
       'enabled' => array(
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+        'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ),
     ),
