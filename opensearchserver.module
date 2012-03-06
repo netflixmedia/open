@@ -3,7 +3,7 @@
  * Implements hook_init()
  */
 function opensearchserver_init() {
-  //check if the opensearchserver library is present in the libraries folder
+//check if the opensearchserver library is present in the libraries folder
   if (module_exists('libraries')) {
     $library = libraries_get_path('opensearchserver');
     require_once $library .'/oss_api.class.php';
@@ -42,24 +42,24 @@ function opensearchserver_perm() {
 function opensearchserver_menu() {
   $items = array();
   $items['admin/settings/opensearchserver'] = array(
-      'title'  => 'OpenSearchServer',
-      'description'  => 'Settings to access the OpenSearchServer instance from drupal.',
-      'page callback'  => 'drupal_get_form',
-      'page arguments'  => array('opensearchserver_admin'),
-      'access arguments' => array('access administration pages'),
-      'access arguments'  =>  array('access opensearchserver admin'),
+    'title'  => 'OpenSearchServer',
+    'description'  => t('Settings to access the OpenSearchServer instance from drupal.'),
+    'page callback'  => 'drupal_get_form',
+    'page arguments'  => array('opensearchserver_admin'),
+    'access arguments' => array('access administration pages'),
+    'access arguments'  =>  array('access opensearchserver admin'),
   );
   $items['opensearchserver'] = array(
-      'title'   => 'OpenSearchServer Search',
-      'description'  => 'This module will integrate OpenSearchServer 1.2 as search engine for Drupal 6.x.x',
-      'page callback'  => 'opensearchserver_search',
-      'access arguments'  => array('access opensearchserver search'),
+    'title'   => 'OpenSearchServer Search',
+    'description'  => t('This module will integrate OpenSearchServer 1.2 as search engine for Drupal 6.x.x'),
+    'page callback'  => 'opensearchserver_search',
+    'access arguments'  => array('access opensearchserver search'),
   );
   $items['opensearchserver/autocomplete'] = array(
-        'title' => 'Autocomplete for cities',
-        'page callback' => 'opensearchserver_autocomplete',
-        'access arguments' => array('access opensearchserver search'),
-        'type' => MENU_CALLBACK
+    'title' => 'Autocomplete for cities',
+    'page callback' => 'opensearchserver_autocomplete',
+    'access arguments' => array('access opensearchserver search'),
+    'type' => MENU_CALLBACK
   );
   return $items;
 }

@@ -154,20 +154,20 @@ function opensearchserver_schema() {
     'description' => t('The base table for saved articles.'),
     'fields' => array(
       'type' => array(
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => TRUE,
       ),
-  'name' => array(
-        'description' => t('The name of the fields.'),
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => TRUE,
+    'name' => array(
+      'description' => t('The name of the fields.'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => TRUE,
       ),
-      'enabled' => array(
-       'type' => 'int',
-        'size' => 'tiny',
-        'not null' => TRUE,
+    'enabled' => array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
       )
     ),
   );
@@ -194,6 +194,5 @@ function opensearchserver_schema() {
       ),
     ),
   );
-  return $schema;
+return $schema;
 }
-
