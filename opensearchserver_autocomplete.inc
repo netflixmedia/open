@@ -24,18 +24,14 @@ function opensearchserver_autocomplete() {
     if ($results->getResultFound() == 0) {
       return;
     }
-  if ($results->getResultFound() > 10) {
-    $end = 10;
-  }
-  else{
-    $end = $results->getResultFound();
-  }
-  for ($i = 0; $i < $end; $i++) {
-    $suggest = stripslashes(strip_tags($results->getField($i, 'expression', FALSE)));
-    if ($i > 0) {
-      echo "\n";
-    }
-    echo trim($suggest);
+    $num_found = $results->getResultFound();
+    $end = ($num_found > 10) ? 10 : $num_found;
+    for ($i = 0; $i < $end; $i++) {
+      $suggest = stripslashes(strip_tags($results->getField($i, 'expression', FALSE)));
+      if ($i > 0) {
+        echo "\n";
+      }
+      echo trim($suggest);
     }
   }
 }

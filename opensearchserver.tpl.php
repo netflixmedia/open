@@ -4,18 +4,19 @@
  * @file
  * Template file to show search result
  */
-print $opensearchserver_data['form'];
+  print $opensearchserver_data['form'];
 ?>
 
 <div id="results">
 <table width="100%" border="0">
 <tr>
-<?php if ($opensearchserver_data['q']) {
-  $oss_result = get_search_result($opensearchserver_data['result']);
-  $oss_result_facet = get_search_result($opensearchserver_data['result_facet']);
-  $search_query = $opensearchserver_data['q'];
-  if ($oss_result->getResultFound() > 0 && $search_query != $opensearchserver_data['block_text']) {
-  $result_time = get_result_time($opensearchserver_data['result']);
+<?php
+  if ($opensearchserver_data['q']) {
+    $oss_result = get_search_result($opensearchserver_data['result']);
+    $oss_result_facet = get_search_result($opensearchserver_data['result_facet']);
+    $search_query = $opensearchserver_data['q'];
+    if ($oss_result->getResultFound() > 0 && $search_query != $opensearchserver_data['block_text']) {
+      $result_time = get_result_time($opensearchserver_data['result']);
 ?>
 
 <div align="left">
@@ -26,10 +27,12 @@ print $opensearchserver_data['form'];
 ?>
 
 <?php
-if ($opensearchserver_data['filter_enabled'] == 1 && $oss_result->getResultFound() <= 0 && $opensearchserver_data['no_filter'] == 1 && $search_query != $opensearchserver_data['block_text']) {
+$check_filter_enabled = $opensearchserver_data['filter_enabled'] == 1 && $search_query != $opensearchserver_data['block_text'];
+$check_filter_at_zero_result = $oss_result->getResultFound() <= 0 && $opensearchserver_data['no_filter'] == 1;
+if ($check_filter_enabled && $check_filter_at_zero_result) {
   $filter_result = TRUE;
   }
-elseif ($opensearchserver_data['filter_enabled'] == 1 && $oss_result->getResultFound() > 0 && $search_query != $opensearchserver_data['block_text']) {
+elseif ($check_filter_enabled && $oss_result->getResultFound() > 0) {
   $filter_result = TRUE;
 }
 else {
@@ -42,7 +45,9 @@ if ($filter_result) {
   <div class="oss_facet_type"><?php print check_plain(t('Type'));?>
   <ul>
 <?php
-if ($opensearchserver_data['fq'] == NULL && $opensearchserver_data['tq'] == NULL && $opensearchserver_data['ts'] == NULL &&  $oss_result_facet >= 0|| $oss_result->getResultFound() <= 0 && $oss_result_facet <= 0) {
+$check_facet_available = $opensearchserver_data['fq'] == NULL && $opensearchserver_data['tq'] == NULL && $opensearchserver_data['ts'] == NULL &&  $oss_result_facet >= 0;
+$check_facet_available_atzero_result = $oss_result->getResultFound() <= 0 && $oss_result_facet <= 0;
+if ($check_facet_available || $check_facet_available_atzero_result) {
   $facet_everything = TRUE;
 }
 else {
@@ -55,8 +60,7 @@ foreach ($oss_result_facet->getFacet('type') as $values) {
     <li><b><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></b></li>
 <?php
 }
-else
-{
+else {
 ?>
 <li><a href="/?q=opensearchserver/search/<?php print drupal_urlencode($search_query);?>/&fq=<?php print drupal_urlencode($value);?>"> <?php print drupal_ucfirst(check_plain($value)) . '(' .  $values . ')';?> </a></li>
 <?php

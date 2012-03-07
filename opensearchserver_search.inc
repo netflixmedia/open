@@ -8,12 +8,12 @@
  * Implements hook_theme().
  */
 function opensearchserver_theme($existing, $type, $theme, $path) {
-return array(
+  return array(
   'opensearchserver_search' => array(
     'arguments' => array('opensearchserver_data' => NULL),
     'template' => 'opensearchserver',
   )
-);
+  );
 }
 
 function opensearchserver_preprocess_search_theme_form(&$vars, $hook)  {
@@ -27,45 +27,45 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
   $form_id_processed = $form_id;
   $value = isset($arg[2]) ? $arg[2] : '';
   switch ($form_id_processed) {
-  case 'search_form':
-    $form['basic']['inline']['keys'] = array(
-      '#type' => 'textfield',
-      '#title' => '',
-      '#default_value'  => $value,
-      '#maxlength' => 255,
-    );
-    $form['basic']['inline']['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Search'),
-    );
+    case 'search_form':
+      $form['basic']['inline']['keys'] = array(
+        '#type' => 'textfield',
+        '#title' => '',
+        '#default_value'  => $value,
+        '#maxlength' => 255,
+      );
+      $form['basic']['inline']['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Search'),
+      );
     $form['#submit'][] = 'opensearchserver_submit';
-  break;
-  case 'search_theme_form':
-    $form['search_theme_form'] = array(
-      '#type' => 'textfield',
-      '#title' => '',
-      '#size' => 15,
-      '#maxlength' => 255,
-    );
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Search'),
-    );
-    $form['#submit'][] = 'opensearchserver_submit';
-  break;
-  case 'search_block_form':
-    $form['search_block_form'] = array(
-      '#type' => 'textfield',
-      '#title' => '',
-      '#size' => 15,
-      '#maxlength' => 255,
-    );
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Search'),
-    );
-    $form['#submit'][] = 'opensearchserver_submit';
-  break;
+    break;
+    case 'search_theme_form':
+      $form['search_theme_form'] = array(
+        '#type' => 'textfield',
+        '#title' => '',
+        '#size' => 15,
+        '#maxlength' => 255,
+      );
+      $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Search'),
+      );
+      $form['#submit'][] = 'opensearchserver_submit';
+    break;
+    case 'search_block_form':
+      $form['search_block_form'] = array(
+        '#type' => 'textfield',
+        '#title' => '',
+        '#size' => 15,
+        '#maxlength' => 255,
+      );
+      $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Search'),
+      );
+      $form['#submit'][] = 'opensearchserver_submit';
+    break;
   }
   unset($form['#token']);
 }
@@ -160,36 +160,36 @@ function opensearchserver_paging($result) {
   $oss_paging = new OssPaging($result, 'r', 'p');
   $paging_array = array();
   if (isset($oss_paging) && $oss_paging->getResultTotal() >= 1) {
-  if ($oss_paging->getResultLow() > 0) {
-    $style='oss_pager_first';
-    $label = 'First';
-    $url = $oss_paging->getPageBaseURI() . '1';
-    $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
-  }
-  if ($oss_paging->getResultPrev() < $oss_paging->getResultCurrentPage()) {
-    $style='oss_pager_prev';
-    $label = 'Previous';
-    $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultPrev() + 1);
-    $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
-  }
-  for ($i = $oss_paging->getResultLow(); $i < $oss_paging->getResultHigh(); $i++) {
-    $style='oss_pager_number';
-    if ($i == $oss_paging->getResultCurrentPage()) {
-     $label = $i + 1;
-      $url = NULL;
+    if ($oss_paging->getResultLow() > 0) {
+      $style='oss_pager_first';
+      $label = 'First';
+      $url = $oss_paging->getPageBaseURI() . '1';
+      $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
     }
-    else {
-    $label = $i + 1;
-    $url = $oss_paging->getPageBaseURI() . $label;
+    if ($oss_paging->getResultPrev() < $oss_paging->getResultCurrentPage()) {
+      $style='oss_pager_prev';
+      $label = 'Previous';
+      $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultPrev() + 1);
+      $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
     }
-  $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
-  }
-  if ($oss_paging->getResultNext() > $oss_paging->getResultCurrentPage()) {
-    $style='oss_pager_next';
-    $label = 'Next';
-    $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultNext() + 1);
-    $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
-  }
+    for ($i = $oss_paging->getResultLow(); $i < $oss_paging->getResultHigh(); $i++) {
+      $style='oss_pager_number';
+      if ($i == $oss_paging->getResultCurrentPage()) {
+        $label = $i + 1;
+        $url = NULL;
+      }
+      else {
+        $label = $i + 1;
+        $url = $oss_paging->getPageBaseURI() . $label;
+      }
+      $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
+    }
+    if ($oss_paging->getResultNext() > $oss_paging->getResultCurrentPage()) {
+      $style='oss_pager_next';
+      $label = 'Next';
+      $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultNext() + 1);
+      $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
+    }
   }
   return $paging_array;
   }
@@ -219,67 +219,61 @@ function get_result_time($result) {
  */
 
 function opensearchserver_get_search_result($query, $facet) {
-if ($query) {
-  global $user;
-  $get_details = db_query("
-  SELECT *
-  FROM {opensearchserver}"
-  );
-  $server_details = db_fetch_object($get_details);
-  $start = isset($_REQUEST['p']) ? $_REQUEST['p'] : NULL;
-  $start = isset($start) ? max(0, $start - 1) * 10 : 0;
-  $escapechars = array('\\', '^', '~', ':', '(', ')', '{', '}', '[', ']' , '&&', '||', '!', '*', '?');
-  foreach ($escapechars as $escchar) {
-    $query = str_replace($escchar, ' ', $query);
-  }
-  $query = trim($query);
-  $search = new OssSearch($server_details->serverurl, $server_details->indexname, 10, $start);
-  $search->credential($server_details->username, $server_details->key);
-  if ($server_details->log_enable) {
-    $search->setLog(TRUE);
-    $search->setCustomLog(1, session_id());
-    if ( $user->uid ) {
-      $search->setCustomLog (2, $user->name);
+  if ($query) {
+    global $user;
+    $get_details = db_query("
+    SELECT *
+    FROM {opensearchserver}"
+    );
+    $server_details = db_fetch_object($get_details);
+    $start = isset($_REQUEST['p']) ? $_REQUEST['p'] : NULL;
+    $start = isset($start) ? max(0, $start - 1) * 10 : 0;
+    $escapechars = array('\\', '^', '~', ':', '(', ')', '{', '}', '[', ']' , '&&', '||', '!', '*', '?');
+    foreach ($escapechars as $escchar) {
+      $query = str_replace($escchar, ' ', $query);
     }
-    else {
-      $search->setCustomLog (2, "Guest");
+    $query = trim($query);
+    $search = new OssSearch($server_details->serverurl, $server_details->indexname, 10, $start);
+    $search->credential($server_details->username, $server_details->key);
+    if ($server_details->log_enable) {
+      $search->setLog(TRUE);
+      $search->setCustomLog(1, session_id());
+      if ( $user->uid ) {
+        $search->setCustomLog (2, $user->name);
+      }
+      else {
+        $search->setCustomLog (2, "Guest");
+      }
+      $search->setCustomLog (3, $_SERVER['REMOTE_ADDR']);
     }
-    $search->setCustomLog (3, $_SERVER['REMOTE_ADDR']);
-  }
-  $search->facet('type', 1);
-  $search->facet('taxonomy', 1);
-  if ($facet) {
-    $filter=$_REQUEST['fq'];
-    if ($filter) {
-    if ($filter != 'All') {
-      $search->filter('type:"' . $filter . '"');
+    $search->facet('type', 1);
+    $search->facet('taxonomy', 1);
+    if ($facet) {
+      $filter=$_REQUEST['fq'];
+      if ($filter && $filter != 'All') {
+        $search->filter('type:"' . $filter . '"');
+      }
+      $filter_categories=$_REQUEST['tq'];
+      if ($filter_categories && $filter_categories != 'All') {
+        $search->filter('taxonomy:"' . $filter_categories . '"');
+      }
+      $timestamp_filter=$_REQUEST['ts'];
+      if ($timestamp_filter && $timestamp_filter != 'All') {
+        if ( $timestamp_filter=="Past 24 hours") {
+          $search->filter('content_timestamp:[' . date("YmdHis", mktime(0, 0, 0, date("m"), date("d")-1, date("Y"))) . ' TO ' . date("YmdHis") . ']');
+        }
+        elseif ($timestamp_filter=="Past week") {
+          $search->filter('content_timestamp:[' . date("YmdHis", mktime(0, 0, 0, date("m"), date("d")-7, date("Y"))) . ' TO ' . date("YmdHis") . ']');
+        }
+        elseif ($timestamp_filter=="Past month") {
+          $search->filter('content_timestamp:[' . date("YmdHis", mktime(0, 0, 0, date("m"), date("d")-31, date("Y"))) . ' TO ' . date("YmdHis") . ']');
+        }
+        elseif ($timestamp_filter=="Past year") {
+          $search->filter('content_timestamp:[' . date("YmdHis", mktime(0, 0, 0, date("m"), date("d")-365, date("Y"))) . ' TO ' . date("YmdHis") . ']');
+        }
+      }
     }
-    }
-  $filter_categories=$_REQUEST['tq'];
-  if ($filter_categories) {
-  if ($filter_categories != 'All') {
-    $search->filter('taxonomy:"' . $filter_categories . '"');
-  }
-  }
-  $timestamp_filter=$_REQUEST['ts'];
-  if ($timestamp_filter) {
-  if ($timestamp_filter != 'All') {
-  if ( $timestamp_filter=="Past 24 hours") {
-    $search->filter('content_timestamp:[' . date("YmdHis", mktime(0, 0, 0, date("m"), date("d")-1, date("Y"))) . ' TO ' . date("YmdHis") . ']');
-  }
-  elseif ($timestamp_filter=="Past week") {
-    $search->filter('content_timestamp:[' . date("YmdHis", mktime(0, 0, 0, date("m"), date("d")-7, date("Y"))) . ' TO ' . date("YmdHis") . ']');
-  }
-  elseif ($timestamp_filter=="Past month") {
-    $search->filter('content_timestamp:[' . date("YmdHis", mktime(0, 0, 0, date("m"), date("d")-31, date("Y"))) . ' TO ' . date("YmdHis") . ']');
-  }
-  elseif ($timestamp_filter=="Past year") {
-    $search->filter('content_timestamp:[' . date("YmdHis", mktime(0, 0, 0, date("m"), date("d")-365, date("Y"))) . ' TO ' . date("YmdHis") . ']');
-  }
-  }
-  }
-  }
-  $result = $search->query($query)->template('search')->execute(5);
+    $result = $search->query($query)->template('search')->execute(5);
   }
   return $result;
 }
@@ -305,5 +299,5 @@ function generate_facet_everything($facet_everything, $query) {
  * Generate url for everything in facet
  */
 function generate_url_everything($query) {
-  return '<a id="oss_facet" href="/?q=opensearchserver/search/'. drupal_urlencode($query) .'">'. print t('Everything') . '</a>';
+  return '<a id="oss_facet" href="/?q=opensearchserver/search/'. drupal_urlencode($query) .'"> Everything</a>';
 }

@@ -191,8 +191,8 @@ function opensearchserver_schema() {
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
-      ),
+        ),
     ),
   );
-return $schema;
+  return $schema;
 }
