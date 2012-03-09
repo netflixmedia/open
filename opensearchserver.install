@@ -151,47 +151,52 @@ function opensearchserver_schema() {
   );
 
   $schema['opensearchserver_type'] = array(
-    'description' => t('The base table for saved articles.'),
+    'description' => t('The table for the facet type.'),
     'fields' => array(
       'type' => array(
-      'type' => 'varchar',
-      'length' => '255',
-      'not null' => TRUE,
+        'description' => t('The name of the facet fields'),
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
       ),
-    'name' => array(
-      'description' => t('The name of the fields.'),
-      'type' => 'varchar',
-      'length' => '255',
-      'not null' => TRUE,
+      'name' => array(
+        'description' => t('The readable name of the facet fields.'),
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
       ),
-    'enabled' => array(
-      'type' => 'int',
-      'size' => 'tiny',
-      'not null' => TRUE,
+      'enabled' => array(
+        'description' => t('To check if the field is enabled or not'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
       )
     ),
   );
 
   $schema['opensearchserver_categories'] = array(
-    'description' => t('The table for opensearchserver categories.'),
+    'description' => t('The table for opensearchserver category.'),
     'fields' => array(
       'id' => array(
+        'description' => t('The id of the category'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
       ),
 
       'categories' => array(
+        'description' => t('The name of the category'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
       ),
 
       'enabled' => array(
+        'description' => t('To check if the category is enabled are not'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
-        ),
+      ),
     ),
   );
   return $schema;

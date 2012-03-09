@@ -7,8 +7,10 @@
 function opensearchserver_autocomplete() {
   $query=isset($_REQUEST['query']) ? $_REQUEST['query'] : NULL;
   $get_details = db_query("
-  SELECT *
-  FROM {opensearchserver}"
+    SELECT `serverurl`,
+    `autocomplete_index`,`username`,
+    `key`,`autocomplete_query`
+    FROM {opensearchserver}"
   );
   $server_details = db_fetch_object($get_details);
   $escapechars = array('\\', '^', '~', ':', '(', ')', '{', '}', '[', ']' , '&&', '||', '!', '*', '?');

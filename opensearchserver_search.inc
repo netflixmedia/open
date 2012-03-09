@@ -9,14 +9,14 @@
  */
 function opensearchserver_theme($existing, $type, $theme, $path) {
   return array(
-  'opensearchserver_search' => array(
-    'arguments' => array('opensearchserver_data' => NULL),
-    'template' => 'opensearchserver',
-  )
+    'opensearchserver_search' => array(
+      'arguments' => array('opensearchserver_data' => NULL),
+      'template' => 'opensearchserver',
+    )
   );
 }
 
-function opensearchserver_preprocess_search_theme_form(&$vars, $hook)  {
+function opensearchserver_preprocess_search_theme_form(&$vars, $hook) {
   $vars['form']['search_theme_form']['#value'] = t('Search this Site');
 }
 
@@ -108,15 +108,15 @@ function opensearchserver_search() {
   global $base_url;
   $arg = arg(NULL, $_GET['q']);
   $block_tool = db_query("
-  SELECT
-  noresult_filter_enable,
-  block_text,
-  filter_enabled,
-  url_snippet,
-  date_filter,
-  signature
-  FROM
-  {opensearchserver}"
+    SELECT
+    noresult_filter_enable,
+    block_text,
+    filter_enabled,
+    url_snippet,
+    date_filter,
+    signature
+    FROM
+    {opensearchserver}"
   );
   $search_settings=db_fetch_object($block_tool);
   $tq = isset($_REQUEST['tq']) ? $_REQUEST['tq'] : NULL;
@@ -222,8 +222,10 @@ function opensearchserver_get_search_result($query, $facet) {
   if ($query) {
     global $user;
     $get_details = db_query("
-    SELECT *
-    FROM {opensearchserver}"
+      SELECT `serverurl`,
+      `indexname`,`username`,
+      `key`,`log_enable`
+      FROM {opensearchserver}"
     );
     $server_details = db_fetch_object($get_details);
     $start = isset($_REQUEST['p']) ? $_REQUEST['p'] : NULL;
@@ -295,9 +297,40 @@ function generate_facet_everything($facet_everything, $query) {
   }
   return $output;
 }
+
 /**
  * Generate url for everything in facet
  */
+
 function generate_url_everything($query) {
   return '<a id="oss_facet" href="/?q=opensearchserver/search/'. drupal_urlencode($query) .'"> Everything</a>';
+}
+
+/**
+ * Check the filter result is available or not
+ */
+
+function get_filter_result($oss_result, $filter_enabled , $block_text, $no_filter) {
+  $check_filter_enabled = $filter_enabled == 1 && $search_query != $block_text;
+  $check_filter_at_zero_result = $oss_result->getResultFound() <= 0 && $no_filter == 1;
+  if ($check_filter_enabled && $check_filter_at_zero_result) {
+    $filter_result = TRUE;
+  }
+  elseif ($check_filter_enabled && $oss_result->getResultFound() > 0) {
+    $filter_result = TRUE;
+  }
+  else {
+    $filter_result = FALSE;
+  }
+  return  $filter_result;
+}
+
+/**
+ * Generate the filter for everything.
+ */
+
+function get_facet_everything($facet_fq, $facet_tq, $facet_ts, $oss_result_facet, $oss_result) {
+  $check_facet_available = $facet_fq == NULL && $facet_tq == NULL && $facet_ts == NULL &&  $oss_result_facet >= 0;
+  $check_facet_available_atzero_result = $oss_result->getResultFound() <= 0 && $oss_result_facet <= 0;
+  return ($check_facet_available || $check_facet_available_atzero_result) ? TRUE :FALSE ;
 }

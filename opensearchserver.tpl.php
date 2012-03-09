@@ -27,17 +27,7 @@
 ?>
 
 <?php
-$check_filter_enabled = $opensearchserver_data['filter_enabled'] == 1 && $search_query != $opensearchserver_data['block_text'];
-$check_filter_at_zero_result = $oss_result->getResultFound() <= 0 && $opensearchserver_data['no_filter'] == 1;
-if ($check_filter_enabled && $check_filter_at_zero_result) {
-  $filter_result = TRUE;
-  }
-elseif ($check_filter_enabled && $oss_result->getResultFound() > 0) {
-  $filter_result = TRUE;
-}
-else {
-  $filter_result = FALSE;
-}
+$filter_result = get_filter_result($oss_result, $opensearchserver_data['filter_enabled'], $opensearchserver_data['block_text'] , $opensearchserver_data['no_filter']);
 if ($filter_result) {
 ?>
 <td width="25%">
@@ -45,14 +35,7 @@ if ($filter_result) {
   <div class="oss_facet_type"><?php print check_plain(t('Type'));?>
   <ul>
 <?php
-$check_facet_available = $opensearchserver_data['fq'] == NULL && $opensearchserver_data['tq'] == NULL && $opensearchserver_data['ts'] == NULL &&  $oss_result_facet >= 0;
-$check_facet_available_atzero_result = $oss_result->getResultFound() <= 0 && $oss_result_facet <= 0;
-if ($check_facet_available || $check_facet_available_atzero_result) {
-  $facet_everything = TRUE;
-}
-else {
-  $facet_everything = FALSE;
-}
+$facet_everything = get_facet_everything($opensearchserver_data['fq'], $opensearchserver_data['tq'], $opensearchserver_data['ts'], $oss_result_facet, $oss_result);
 print generate_facet_everything($facet_everything, $search_query);
 foreach ($oss_result_facet->getFacet('type') as $values) {
   $value = $values['name'];

@@ -5,24 +5,24 @@
  */
 function get_settings_query() {
   $query = <<<SQL
-   SELECT serverurl,
-  `indexname`,
-  `username`,
-  `key`,
-  `last_indexed`,
-  `delay`,
-  `filter_enabled`,
-  `signature`,
-  `title_snippet`,
-  `content_snippet`,
-  `url_snippet`,
-  `date_filter`,
-  `log_enable`,
-  `noresult_filter_enable`,
-  `block_text`,
-  `autocomplete_index`,
-  `autocomplete_query`
-  FROM {opensearchserver}
+    SELECT serverurl,
+    `indexname`,
+    `username`,
+    `key`,
+    `last_indexed`,
+    `delay`,
+    `filter_enabled`,
+    `signature`,
+    `title_snippet`,
+    `content_snippet`,
+    `url_snippet`,
+    `date_filter`,
+    `log_enable`,
+    `noresult_filter_enable`,
+    `block_text`,
+    `autocomplete_index`,
+    `autocomplete_query`
+    FROM {opensearchserver}
 SQL;
   return db_query($query);
 }
@@ -33,11 +33,11 @@ SQL;
 
 function get_drupal_types() {
   $query_type = <<<SQL
-  SELECT DISTINCT
-  type,
-  name,
-  enabled
-  FROM {opensearchserver_type}
+    SELECT DISTINCT
+    type,
+    name,
+    enabled
+    FROM {opensearchserver_type}
 SQL;
   return db_query($query_type);
 }
@@ -47,11 +47,12 @@ SQL;
 
 function get_drupal_categories() {
   $query_categories = <<<SQL
-  SELECT
-  DISTINCT
-  `categories`,
-  `enabled`
-  FROM {opensearchserver_categories}
+    SELECT
+    DISTINCT
+    `categories`,
+    `enabled`
+    FROM
+    {opensearchserver_categories}
 SQL;
   return db_query($query_categories);
 }
@@ -155,18 +156,18 @@ function opensearchserver_admin() {
   );
   //Get the field type to be indexed
   $count = db_result(db_query("
-  SELECT
-  COUNT(*)
-  FROM
-  {opensearchserver_type}"
+    SELECT
+    COUNT(*)
+    FROM
+    {opensearchserver_type}"
   ));
 
   $types_from_ossdb = get_drupal_types();
   $result = db_query("
-  SELECT
-  name, type
-  FROM
-  {node_type}"
+    SELECT
+    name, type
+    FROM
+    {node_type}"
   );
 
   if ($count > 0) {
@@ -212,25 +213,25 @@ function opensearchserver_admin() {
     '#default_value' => check_plain($settings->noresult_filter_enable),
   );
   $categories_data = db_query("
-  SELECT
-  name
-  FROM
-  {vocabulary}"
+    SELECT
+    name
+    FROM
+    {vocabulary}"
   );
 
   $category_count = db_result(db_query("
-  SELECT
-  COUNT(*)
-  FROM
-  {opensearchserver_categories}"
+    SELECT
+    COUNT(*)
+    FROM
+    {opensearchserver_categories}"
   ));
 
   $category_type = db_query("
-  SELECT
-  DISTINCT
-  id, categories, enabled
-  FROM
-  {opensearchserver_categories}"
+    SELECT
+    DISTINCT
+    id, categories, enabled
+    FROM
+    {opensearchserver_categories}"
   );
 
   if ($category_count > 0) {
@@ -406,11 +407,11 @@ function create_index($serverurl, $indexname, $username, $key) {
 
 function delete_all() {
   $delete_query = <<<SQL
-   SELECT serverurl,
-  `indexname`,
-  `username`,
-  `key`
-  FROM {opensearchserver}
+    SELECT serverurl,
+    `indexname`,
+    `username`,
+    `key`
+    FROM {opensearchserver}
 SQL;
   $get_server_details = db_query($delete_query);
   $server_details = db_fetch_object($get_server_details);
@@ -477,87 +478,90 @@ function truncate_db() {
 function insert_database_values($form_state, $serverurl, $indexname, $username,  $key) {
   truncate_db();
   db_query("
-  INSERT INTO `{opensearchserver}`
-  (
-  `serverurl`,
-  `indexname`,
-  `username`,
-  `key`,
-  `last_indexed`,
-  `delay`,
-  `filter_enabled`,
-  `signature`,
-  `title_snippet`,
-  `content_snippet`,
-  `url_snippet`,
-  `date`,
-  `date_filter`,
-  `log_enable`,
-  `noresult_filter_enable`,
-  `block_text`,
-  `autocomplete_index`,
-  `autocomplete_query`
-  )
-  VALUES
-  ('%s',  '%s',  '%s',  '%s',  '%s',  '%d',  '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%s', '%s', '%s')",
-  $form_state['values']['serverurl'],
-  $form_state['values']['indexname'],
-  $form_state['values']['username'],
-  $form_state['values']['key'], '',
-  $form_state['values']['delay'],
-  $form_state['values']['filters'],
-  $form_state['values']['signature'],
-  $form_state['values']['title_snippet'],
-  $form_state['values']['content_snippet'],
-  $form_state['values']['url_snippet'],
-  $form_state['values']['timestamp'],
-  $form_state['values']['date_filters'],
-  $form_state['values']['log_enable'],
-  $form_state['values']['noresult_filter_enable'],
-  $form_state['values']['block_tip'],
-  $form_state['values']['autocomplete_index'],
-  $form_state['values']['autocomplete_query']
+    INSERT INTO `{opensearchserver}`
+    (
+    `serverurl`,
+    `indexname`,
+    `username`,
+    `key`,
+    `last_indexed`,
+    `delay`,
+    `filter_enabled`,
+    `signature`,
+    `title_snippet`,
+    `content_snippet`,
+    `url_snippet`,
+    `date`,
+    `date_filter`,
+    `log_enable`,
+    `noresult_filter_enable`,
+    `block_text`,
+    `autocomplete_index`,
+    `autocomplete_query`
+    )
+    VALUES
+    ('%s',  '%s',  '%s',  '%s',  '%s',  '%d',  '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%s', '%s', '%s')",
+    $form_state['values']['serverurl'],
+    $form_state['values']['indexname'],
+    $form_state['values']['username'],
+    $form_state['values']['key'], '',
+    $form_state['values']['delay'],
+    $form_state['values']['filters'],
+    $form_state['values']['signature'],
+    $form_state['values']['title_snippet'],
+    $form_state['values']['content_snippet'],
+    $form_state['values']['url_snippet'],
+    $form_state['values']['timestamp'],
+    $form_state['values']['date_filters'],
+    $form_state['values']['log_enable'],
+    $form_state['values']['noresult_filter_enable'],
+    $form_state['values']['block_tip'],
+    $form_state['values']['autocomplete_index'],
+    $form_state['values']['autocomplete_query']
   );
   $types = db_query("
-    SELECT DISTINCT type, name FROM {node_type}"
+    SELECT
+    DISTINCT
+    type, name
+    FROM {node_type}"
   );
 
   while ($type = db_fetch_object($types)) {
   db_query("
-  INSERT INTO
-  `{opensearchserver_type}`
-  (
-  `type`, `name`, `enabled`
-  )
-  VALUES
-  (
-  '%s', '%s', '%d'
-  )",
-  $type->type,
-  $type->name,
-  $form_state['values'][$type->type]
+    INSERT INTO
+    `{opensearchserver_type}`
+    (
+    `type`, `name`, `enabled`
+    )
+    VALUES
+    (
+    '%s', '%s', '%d'
+    )",
+    $type->type,
+    $type->name,
+    $form_state['values'][$type->type]
   );
   }
 
   $categories = db_query("
-  SELECT
-  DISTINCT
-  vid, name
-  FROM
-  {vocabulary}"
+    SELECT
+    DISTINCT
+    vid, name
+    FROM
+    {vocabulary}"
   );
 
   while ($category = db_fetch_object($categories)) {
   db_query("
-  INSERT INTO `{opensearchserver_categories}`
-  (
-  `id`, `categories`,  `enabled`
-  )
-  VALUES
-  (
-  '%s', '%s',  '%d')",
-  $category->vid, $category->name,
-  $form_state['values'][str_replace(' ',  '_',  $category->name)]
+    INSERT INTO `{opensearchserver_categories}`
+    (
+    `id`, `categories`,  `enabled`
+    )
+    VALUES
+    (
+    '%s', '%s',  '%d')",
+    $category->vid, $category->name,
+    $form_state['values'][str_replace(' ',  '_',  $category->name)]
   );
   }
   drupal_set_message(t('Settings has been Updated'));
@@ -610,11 +614,11 @@ function opensearchserver_drupl_schema($url,  $indexname,  $username,  $key) {
  */
 function get_total_result($type) {
   $count_result_query=<<<SQL
-  SELECT
-  COUNT(*) FROM
-  {node} n, {node_revisions} rev
-  WHERE
-  n.nid = rev.nid AND n.type LIKE '%s'
+    SELECT
+    COUNT(*) FROM
+    {node} n, {node_revisions} rev
+    WHERE
+    n.nid = rev.nid AND n.type LIKE '%s'
 SQL;
   return db_query($count_result_query, $type);
 }
@@ -623,44 +627,44 @@ SQL;
  * Generate SQL query to get all the documents
  */
 function get_allpagest_db($create_date) {
-if ($create_date="createddate") {
-  $sql = <<<SQL
-  SELECT
-  node.type,
-  node.nid,
-  node.comment,
-  node.status,
-  node.created,
-  node_revisions.uid,
-  node_revisions.title,
-  node_revisions.body,
-  node_revisions.timestamp ' .'
-  FROM {node}, {node_revisions}
-  WHERE
-  node.nid = node_revisions.nid
-  AND
-  node.type LIKE '%s' LIMIT %d, %d
+  if ($create_date="createddate") {
+    $sql = <<<SQL
+      SELECT
+      node.type,
+      node.nid,
+      node.comment,
+      node.status,
+      node.created,
+      node_revisions.uid,
+      node_revisions.title,
+      node_revisions.body,
+      node_revisions.timestamp
+      FROM {node}, {node_revisions}
+      WHERE
+      node.nid = node_revisions.nid
+      AND
+      node.type LIKE '%s' LIMIT %d, %d
 SQL;
   }
-else {
-  $sql = <<<SQL
-  SELECT
-  node.type,
-  node.nid,
-  node.comment,
-  node.status,
-  node.changed,
-  node_revisions.uid,
-  node_revisions.title,
-  node_revisions.body,
-  node_revisions.timestamp ' . '
-  FROM {node}, {node_revisions}
-  WHERE
-  node.nid = node_revisions.nid
-  AND
-  node.type LIKE '%s' LIMIT %d, %d
+  else {
+    $sql = <<<SQL
+    SELECT
+    node.type,
+    node.nid,
+    node.comment,
+    node.status,
+    node.changed,
+    node_revisions.uid,
+    node_revisions.title,
+    node_revisions.body,
+    node_revisions.timestamp
+    FROM {node}, {node_revisions}
+    WHERE
+    node.nid = node_revisions.nid
+    AND
+    node.type LIKE '%s' LIMIT %d, %d
 SQL;
-}
+  }
   return $sql;
 }
 
@@ -684,11 +688,11 @@ function create_index_document($document, $resultdoc , $taxonomyarray_data) {
   $document->newField('autocomplete')->newValue(html_entity_decode($resultdoc->body, ENT_QUOTES, 'UTF-8'), TRUE);
   $document->newField('autocomplete')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), TRUE);
   $urlalise = db_query("
-  SELECT *
-  FROM
-  {url_alias}
-  WHERE
-  url_alias.src='%s'", 'node/' . $resultdoc->nid
+    SELECT dst
+    FROM
+    {url_alias}
+    WHERE
+    url_alias.src='%s'", 'node/' . $resultdoc->nid
   );
   $urlalise_object = db_fetch_object($urlalise);
   if ($urlalise_object) {
@@ -727,11 +731,11 @@ function generate_documents_to_index() {
       while ($cate_check = db_fetch_object($categories_check)) {
         if ($cate_check->enabled == 1) {
           $count_result_query="
-          SELECT
-          COUNT(*) FROM
-          {node} n, {node_revisions} rev
-          WHERE
-          n.nid = rev.nid AND n.type LIKE '%s'";
+            SELECT
+            COUNT(*) FROM
+            {node} n, {node_revisions} rev
+            WHERE
+            n.nid = rev.nid AND n.type LIKE '%s'";
           $count_result=db_query($count_result_query, $type->type);
           $result_count = db_result($count_result);
           for ($i = 0; $i < $result_count; $i++) {
@@ -745,17 +749,18 @@ function generate_documents_to_index() {
             while ($resultdoc = db_fetch_object($result)) {
               if ($resultdoc->status == 1) {
                 $taxonomy = db_query('
-                SELECT *
-                FROM
-                {term_node}
-                WHERE
-                term_node.nid=%d', $resultdoc->nid
+                  SELECT *
+                  FROM
+                  {term_node}
+                  WHERE
+                  term_node.nid=%d', $resultdoc->nid
                 );
                 $taxonomyarray = db_fetch_object($taxonomy);
                 $taxonomy_data = db_query('
-                SELECT * FROM {term_data}
-                WHERE
-                term_data.tid=%d', $taxonomyarray->tid
+                  SELECT * FROM
+                  {term_data}
+                  WHERE
+                  term_data.tid=%d', $taxonomyarray->tid
                 );
                 $taxonomyarray_data = db_fetch_object($taxonomy_data);
                 $document = $index->newDocument($language->language);
