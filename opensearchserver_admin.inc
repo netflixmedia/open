@@ -5,7 +5,7 @@
  */
 function get_settings_query() {
   $query = <<<SQL
-    SELECT serverurl,
+    SELECT `serverurl`,
     `indexname`,
     `username`,
     `key`,
@@ -16,6 +16,7 @@ function get_settings_query() {
     `title_snippet`,
     `content_snippet`,
     `url_snippet`,
+    `date`,
     `date_filter`,
     `log_enable`,
     `noresult_filter_enable`,
