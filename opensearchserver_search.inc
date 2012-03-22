@@ -75,14 +75,8 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
  */
 
 function get_language_prefix() {
-  global $language , $base_root;
-  if ( $language->prefix ) {
-    $url = 'q='. $language->prefix . '/opensearchserver/search/';
-  }
-  else {
-    $url = 'q=opensearchserver/search/';
-  }
-  return $url;
+  global $language;
+  return $language->prefix ? 'q='. $language->prefix . '/opensearchserver/search/' : 'q=opensearchserver/search/';
 }
 /**
  * Implements form submission.
@@ -216,7 +210,9 @@ function opensearchserver_create_url_snippet($url, $end) {
     return check_url($url);
   }
 }
-
+/**
+ * Get the maximum value .
+ */
 function get_max($oss_result) {
   return ($oss_result->getResultStart() + $oss_result->getResultRows() > $oss_result->getResultFound()) ? $oss_result->getResultFound() : $oss_result->getResultStart() + $oss_result->getResultRows();
 }
