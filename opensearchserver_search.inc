@@ -71,34 +71,35 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Implements form validation.
+ * Get the language prefix .
  */
 
-function opensearchserver_validate($form, &$form_state) {
-  if (empty($form_state['values']['keys'])) {
-    form_set_error('keywords', t('Please enter a search term.'));
+function get_language_prefix() {
+  global $language , $base_root;
+  if ( $language->prefix ) {
+    $url = 'q='. $language->prefix . '/opensearchserver/search/';
   }
-  if (empty($form_state['values']['search_theme_form'])) {
-    form_set_error('keywords', t('Please enter a search term.'));
+  else {
+    $url = 'q=opensearchserver/search/';
   }
-  if (empty($form_state['values']['search_block_form'])) {
-    form_set_error('keywords', t('Please enter a search term.'));
-  }
+  return $url;
 }
-
 /**
  * Implements form submission.
  */
 
 function opensearchserver_submit($form, &$form_state) {
+  global $language , $base_root;
+  $lang_name = $language->language;
+  $url = get_language_prefix();
   if ($form_state['values']['search_theme_form']) {
-    $form_state['redirect'] = 'opensearchserver/search/'. check_plain($form_state['values']['search_theme_form']);
+    drupal_goto($base_root , $url . check_plain($form_state['values']['search_theme_form']) . '&lq=' . $lang_name);
   }
   elseif ($form_state['values']['search_block_form']) {
-    $form_state['redirect'] = 'opensearchserver/search/'. check_plain($form_state['values']['search_block_form']);
+    drupal_goto($base_root , $url . check_plain($form_state['values']['search_block_form']) . '&lq=' . $lang_name);
   }
   else {
-    $form_state['redirect'] = 'opensearchserver/search/'. check_plain($form_state['values']['keys']);
+    drupal_goto($base_root, $url . check_plain($form_state['values']['keys']) . '&lq=' . $lang_name);
   }
 }
 /**
@@ -114,7 +115,8 @@ function opensearchserver_search() {
     filter_enabled,
     url_snippet,
     date_filter,
-    signature
+    signature,
+    enable_language_filter
     FROM
     {opensearchserver}"
   );
@@ -122,6 +124,7 @@ function opensearchserver_search() {
   $tq = isset($_REQUEST['tq']) ? $_REQUEST['tq'] : NULL;
   $fq = isset($_REQUEST['fq']) ? $_REQUEST['fq'] : NULL;
   $ts = isset($_REQUEST['ts']) ? $_REQUEST['ts'] : NULL;
+  $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
   $opensearchserver_data['q']=$arg[2];
   $result=opensearchserver_get_search_result($arg[2], TRUE);
   $result_facet=opensearchserver_get_search_result($arg[2], FALSE);
@@ -130,6 +133,7 @@ function opensearchserver_search() {
   $opensearchserver_data['tq'] = $tq;
   $opensearchserver_data['fq'] = $fq;
   $opensearchserver_data['ts'] = $ts;
+  $opensearchserver_data['lq'] = $lq;
   $opensearchserver_data['result'] = $result;
   $opensearchserver_data['result_facet'] = $result_facet;
   $opensearchserver_data['base_url'] = $base_url;
@@ -141,8 +145,16 @@ function opensearchserver_search() {
   $opensearchserver_data['url_snippet'] = $search_settings->url_snippet;
   $opensearchserver_data['form'] = drupal_get_form('opensearchserver_page_form');
   $opensearchserver_data['time_stamp'] = $timestamp_array;
+  $opensearchserver_data['enable_language_filter'] = $search_settings->enable_language_filter;
+  $opensearchserver_data['oss_result'] = get_search_result($result);
+  $opensearchserver_data['oss_result_facet'] = get_search_result($result_facet);
+  $opensearchserver_data['result_time'] = get_result_time($opensearchserver_data['result']);
+  $opensearchserver_data['filter_result'] = get_filter_result($opensearchserver_data['oss_result'], $opensearchserver_data['filter_enabled'], $opensearchserver_data['block_text'] , $opensearchserver_data['no_filter']);
+  $opensearchserver_data['facet_everything'] = get_facet_everything($opensearchserver_data['fq'], $opensearchserver_data['tq'], $opensearchserver_data['ts'], $opensearchserver_data['oss_result_facet'], $opensearchserver_data['oss_result']);
+  $opensearchserver_data['print_facet_everything'] = generate_facet_everything($opensearchserver_data['facet_everything'], $opensearchserver_data['q']);
   return theme('opensearchserver_search', $opensearchserver_data);
 }
+
 
 /**
  * Get search result object
@@ -224,7 +236,7 @@ function opensearchserver_get_search_result($query, $facet) {
     $get_details = db_query("
       SELECT `serverurl`,
       `indexname`,`username`,
-      `key`,`log_enable`
+      `key`,`log_enable`,`enable_language_filter`
       FROM {opensearchserver}"
     );
     $server_details = db_fetch_object($get_details);
@@ -250,10 +262,17 @@ function opensearchserver_get_search_result($query, $facet) {
     }
     $search->facet('type', 1);
     $search->facet('taxonomy', 1);
+    $search->facet('lang', 1);
     if ($facet) {
       $filter=$_REQUEST['fq'];
       if ($filter && $filter != 'All') {
         $search->filter('type:"' . $filter . '"');
+      }
+      if ($server_details->enable_language_filter) {
+        $lang_filter=$_REQUEST['lq'];
+        if ($lang_filter && $lang_filter != 'All') {
+          $search->filter('lang:"' . $lang_filter . '"');
+        }
       }
       $filter_categories=$_REQUEST['tq'];
       if ($filter_categories && $filter_categories != 'All') {
@@ -274,6 +293,7 @@ function opensearchserver_get_search_result($query, $facet) {
           $search->filter('content_timestamp:[' . date("YmdHis", mktime(0, 0, 0, date("m"), date("d")-365, date("Y"))) . ' TO ' . date("YmdHis") . ']');
         }
       }
+
     }
     $result = $search->query($query)->template('search')->execute(5);
   }
@@ -285,7 +305,10 @@ function opensearchserver_get_search_result($query, $facet) {
  */
 
 function opensearchserver_page_form_submit($form_id, &$form_state) {
-  $form_state['redirect'] = 'opensearchserver/search/'. $form_state['values']['q'];
+  global $language, $base_url;
+  $lang_name = $language->language;
+  $url = get_language_prefix();
+  drupal_goto($base_url, $url . check_plain($form_state['values']['q']) . '&lq=' . $lang_name);
 }
 
 function generate_facet_everything($facet_everything, $query) {
@@ -303,7 +326,9 @@ function generate_facet_everything($facet_everything, $query) {
  */
 
 function generate_url_everything($query) {
-  return '<a id="oss_facet" href="/?q=opensearchserver/search/'. drupal_urlencode($query) .'"> Everything</a>';
+  $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
+  $url = '?' . get_language_prefix() . drupal_urlencode($query) . '&lq=' . $lq;
+  return '<a id="oss_facet" href="'. $url .'"> Everything</a>';
 }
 
 /**
@@ -330,7 +355,42 @@ function get_filter_result($oss_result, $filter_enabled , $block_text, $no_filte
  */
 
 function get_facet_everything($facet_fq, $facet_tq, $facet_ts, $oss_result_facet, $oss_result) {
-  $check_facet_available = $facet_fq == NULL && $facet_tq == NULL && $facet_ts == NULL &&  $oss_result_facet >= 0;
+  $check_facet_available = $facet_fq == NULL && $facet_tq == NULL && $facet_ts == NULL &&  $oss_result_facet >= 0 ;
   $check_facet_available_atzero_result = $oss_result->getResultFound() <= 0 && $oss_result_facet <= 0;
   return ($check_facet_available || $check_facet_available_atzero_result) ? TRUE :FALSE ;
+}
+/**
+ * Get the native name of the language.
+ */
+function get_local_facet($lang) {
+  $url_prefix = db_query("
+      SELECT language,
+      native,name
+      FROM
+      {languages}
+      WHERE
+      languages.language='%s' AND languages.enabled='%d'", $lang , '1'
+  );
+  $url_prefix_object = db_fetch_object($url_prefix);
+  return $url_prefix_object->native;
+}
+/**
+ * Generate the filter for link
+ */
+function generate_filter_link($q, $facet_name , $facet_value) {
+  $base = '?' . get_language_prefix();
+  $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
+  if ($facet_name != '&lq=') {
+  return $base . drupal_urlencode($q) . $facet_name . drupal_urlencode($facet_value) . '&lq=' . $lq;
+  }
+  else {
+    return $base . drupal_urlencode($q) . $facet_name . drupal_urlencode($facet_value);
+  }
+}
+/**
+ * Check the given facet is the same as you search.
+ */
+
+function check_same_filter($fq, $value) {
+  return ($fq == $value) ? TRUE : FALSE;
 }

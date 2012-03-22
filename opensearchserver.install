@@ -32,91 +32,78 @@ function opensearchserver_schema() {
         'length' => '255',
         'not null' => TRUE,
       ),
-
       'indexname' => array(
         'description' => t('The Index Name Of SearchServer instance.'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
       ),
-
       'username' => array(
         'description' => t('The username. for authentication'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
       ),
-
       'key' => array(
         'description' => t('The key for authentication.'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
       ),
-
       'last_indexed' => array(
         'description' => t('The last indexed timestamp.'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
       ),
-
       'delay' => array(
         'description' => t('The indexing delay.'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
       ),
-
       'filter_enabled' => array(
         'description' => t('Enabling the filter type.'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
       ),
-
       'signature' => array(
         'description' => t('The Signature of the post or page'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
       ),
-
       'title_snippet' => array(
         'description' => t('The Size of the title Snippet'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
       ),
-
       'content_snippet' => array(
         'description' => t('The Size of the content Snippet'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
       ),
-
       'url_snippet' => array(
         'description' => t('The Size of the URL Snippet'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
       ),
-
       'date' => array(
         'description' => t('The Type of date need to be created for filtering.'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
       ),
-
       'date_filter' => array(
         'description' => t('Enabling Filter for date.'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
       ),
-
       'log_enable' => array(
         'description' => t('Enabling log for searching.'),
        'type' => 'int',
@@ -125,6 +112,12 @@ function opensearchserver_schema() {
       ),
       'noresult_filter_enable' => array(
         'description' => t('Enabling filters for zero result.'),
+       'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'enable_language_filter' => array(
+        'description' => t('Enabling filters for locale.'),
        'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
@@ -183,14 +176,12 @@ function opensearchserver_schema() {
         'length' => '255',
         'not null' => TRUE,
       ),
-
       'categories' => array(
         'description' => t('The name of the category'),
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
       ),
-
       'enabled' => array(
         'description' => t('To check if the category is enabled are not'),
         'type' => 'int',

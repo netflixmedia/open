@@ -20,6 +20,7 @@ function get_settings_query() {
     `date_filter`,
     `log_enable`,
     `noresult_filter_enable`,
+    `enable_language_filter`,
     `block_text`,
     `autocomplete_index`,
     `autocomplete_query`
@@ -212,6 +213,12 @@ function opensearchserver_admin() {
     '#description' => t('Checking this box will display filters when the search result was zero.'),
     '#title' => t('Enable filters at zero result'),
     '#default_value' => check_plain($settings->noresult_filter_enable),
+  );
+  $form['fields']['enable_language_filter'] = array(
+      '#type' => 'checkbox',
+      '#description' => t('Checking this box will enable language filter.'),
+      '#title' => t('Enable filters for locale'),
+      '#default_value' => check_plain($settings->enable_language_filter),
   );
   $categories_data = db_query("
     SELECT
@@ -496,12 +503,13 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
     `date_filter`,
     `log_enable`,
     `noresult_filter_enable`,
+    `enable_language_filter`,
     `block_text`,
     `autocomplete_index`,
     `autocomplete_query`
     )
     VALUES
-    ('%s',  '%s',  '%s',  '%s',  '%s',  '%d',  '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%s', '%s', '%s')",
+    ('%s',  '%s',  '%s',  '%s',  '%s',  '%d',  '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d','%d', '%s', '%s', '%s')",
     $form_state['values']['serverurl'],
     $form_state['values']['indexname'],
     $form_state['values']['username'],
@@ -516,6 +524,7 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
     $form_state['values']['date_filters'],
     $form_state['values']['log_enable'],
     $form_state['values']['noresult_filter_enable'],
+    $form_state['values']['enable_language_filter'],
     $form_state['values']['block_tip'],
     $form_state['values']['autocomplete_index'],
     $form_state['values']['autocomplete_query']
@@ -577,6 +586,7 @@ function opensearchserver_drupl_schema($url,  $indexname,  $username,  $key) {
   $snippet_value = db_fetch_object($snippet);
   $oss_api = get_oss_api($url, $username, $key, $indexname);
   $oss_api->setField('id', '', 'NO', 'YES', 'YES', '', 'NO', 'YES');
+  $oss_api->setField('lang', '', 'NO', 'YES', 'YES', '', 'NO', 'NO');
   $oss_api->setField('type', '', 'NO', 'YES', 'YES', '', 'NO', 'NO');
   $oss_api->setField('taxonomy', '', 'NO', 'YES', 'YES', '', 'NO', 'NO');
   $oss_api->setField('content_timestamp', '', 'NO', 'YES', 'YES', '', 'NO', 'NO');
@@ -604,6 +614,7 @@ function opensearchserver_drupl_schema($url,  $indexname,  $username,  $key) {
   $search_template->setReturnField("search", "user_url");
   $search_template->setReturnField("search", "type");
   $search_template->setReturnField("search", "taxonomy");
+  $search_template->setReturnField("search", "lang");
   $search_template->setReturnField("search", "content_timestamp");
   $search_template->setSnippetField("search", "comments_comment", "200", "b", "1", "SentenceFragmenter");
   $search_template->setSnippetField("search", "comments_subject", "150", "b", "1", "NoFragmenter");
@@ -636,6 +647,7 @@ function get_allpagest_db($create_date) {
       node.comment,
       node.status,
       node.created,
+      node.language,
       node_revisions.uid,
       node_revisions.title,
       node_revisions.body,
@@ -655,6 +667,7 @@ SQL;
     node.comment,
     node.status,
     node.changed,
+    node.language,
     node_revisions.uid,
     node_revisions.title,
     node_revisions.body,
@@ -673,7 +686,7 @@ SQL;
  * Creating documents for index
  */
 
-function create_index_document($document, $resultdoc , $taxonomyarray_data) {
+function create_index_document($document , $resultdoc , $taxonomyarray_data , $language) {
   global $base_url;
   $document->newField('id', $resultdoc->type . '_' . $resultdoc->nid);
   if ($resultdoc->created) {
@@ -682,6 +695,7 @@ function create_index_document($document, $resultdoc , $taxonomyarray_data) {
   else {
     $document->newField('content_timestamp', date('YmdHis', $resultdoc->changed));
   }
+  $document->newField('lang')->newValue(html_entity_decode($resultdoc->language, ENT_QUOTES, 'UTF-8'), TRUE);
   $document->newField('type')->newValue(html_entity_decode($resultdoc->type, ENT_QUOTES, 'UTF-8'), TRUE);
   $document->newField('taxonomy')->newValue(html_entity_decode($taxonomyarray_data->name, ENT_QUOTES, 'UTF-8'), TRUE);
   $document->newField('title')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), TRUE);
@@ -695,16 +709,28 @@ function create_index_document($document, $resultdoc , $taxonomyarray_data) {
     WHERE
     url_alias.src='%s'", 'node/' . $resultdoc->nid
   );
+  $url_prefix = db_query("
+    SELECT language,
+    enabled,prefix
+    FROM
+    {languages}
+    WHERE
+    languages.language='%s' AND languages.enabled='%d'", $resultdoc->language , '1'
+  );
+  $url_prefix_object = db_fetch_object($url_prefix);
   $urlalise_object = db_fetch_object($urlalise);
   if ($urlalise_object) {
-    $url_alise= $urlalise_object->dst;
-    $url = url($url_alise, array('absolute' => TRUE));
+    $url_alise = $url_prefix_object->prefix ? $url_prefix_object->prefix . '/' . $urlalise_object->dst : $urlalise_object->dst;
+    $url = url($url_alise , array('absolute' => TRUE));
     $document->newField('url', $url);
   }
   else {
-    $url = url($resultdoc->nid, array('absolute' => TRUE));
+    $url_with_lang = $resultdoc->nid;
+    $url = url($url_with_lang, array('absolute' => TRUE));
     $document->newField('url', $url );
   }
+
+  $document->newField('url', $url );
   $user_url = drupal_get_path_alias('user/' . $resultdoc->uid);
   $user=user_load($resultdoc->uid);
   $document->newField('timestamp', $resultdoc->timestamp);
@@ -765,7 +791,7 @@ function generate_documents_to_index() {
                 );
                 $taxonomyarray_data = db_fetch_object($taxonomy_data);
                 $document = $index->newDocument($language->language);
-                create_index_document($document, $resultdoc, $taxonomyarray_data);
+                create_index_document($document , $resultdoc , $taxonomyarray_data , $language->language);
                 get_comment_documents($resultdoc);
               }
             }
@@ -795,6 +821,7 @@ function get_comment_documents($resultdoc) {
       $comment_url = drupal_get_path_alias('user/' . $resultdoc->nid . '#comment-' . $commentdoc->cid);
       $document->newField('id', 'comment_' . $commentdoc->cid);
       $document->newField('type', 'comments');
+      $document->newField('lang', $resultdoc->language);
       $document->newField('comments_subject')->newValue(html_entity_decode($resultdoc->subject, ENT_QUOTES, 'UTF-8'), TRUE);
       $document->newField('comments_comment')->newValue(html_entity_decode($resultdoc->comment, ENT_QUOTES, 'UTF-8'), TRUE);
       $document->newField('url', url($comment_url , array('absolute' => TRUE)));
