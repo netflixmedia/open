@@ -360,12 +360,12 @@ function get_facet_everything($facet_fq, $facet_tq, $facet_ts, $oss_result_facet
  */
 function get_local_facet($lang) {
   $url_prefix = db_query("
-      SELECT language,
-      native,name
-      FROM
-      {languages}
-      WHERE
-      languages.language='%s' AND languages.enabled='%d'", $lang , '1'
+    SELECT language,
+    native,name
+    FROM
+    {languages}
+    WHERE
+    languages.language='%s' AND languages.enabled='%d'", $lang , '1'
   );
   $url_prefix_object = db_fetch_object($url_prefix);
   return $url_prefix_object->native;
@@ -377,7 +377,7 @@ function generate_filter_link($q, $facet_name , $facet_value) {
   $base = '?' . get_language_prefix();
   $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
   if ($facet_name != '&lq=') {
-  return $base . drupal_urlencode($q) . $facet_name . drupal_urlencode($facet_value) . '&lq=' . $lq;
+    return $base . drupal_urlencode($q) . $facet_name . drupal_urlencode($facet_value) . '&lq=' . $lq;
   }
   else {
     return $base . drupal_urlencode($q) . $facet_name . drupal_urlencode($facet_value);
