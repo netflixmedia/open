@@ -30,11 +30,11 @@
         ?>
         <li>
         <?php
-        print check_same_filter($opensearchserver_data['fq'],$values['name']) ? '<b>':'';
+        print check_same_filter($opensearchserver_data['fq'] , $values['name']) ? '<b>':'';
         ?>
-        <a href="<?php print generate_filter_link($opensearchserver_data['q'],'&fq=',$values['name']);?>"> <?php print drupal_ucfirst(check_plain($values['name'])) . '(' .  $values . ')';?> </a>
+        <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&fq=' , $values['name']);?>"> <?php print drupal_ucfirst(check_plain($values['name'])) . '(' .  $values . ')';?> </a>
         <?php
-        print check_same_filter($opensearchserver_data['fq'],$values['name']) ? '</b>':'';
+        print check_same_filter($opensearchserver_data['fq'] , $values['name']) ? '</b>':'';
         ?>
         </li>
         <?php
@@ -52,11 +52,11 @@
         ?>
         <li>
         <?php
-        print check_same_filter($opensearchserver_data['tq'],$categories['name']) ? '<b>':'';
+        print check_same_filter($opensearchserver_data['tq'] , $categories['name']) ? '<b>':'';
         ?>
-        <a href="<?php print generate_filter_link($opensearchserver_data['q'],'&tq=',$categories['name']);?>"> <?php print drupal_ucfirst(check_plain($categories['name'])) . '(' .  $categories . ')';?> </a>
+        <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&tq=' , $categories['name']);?>"> <?php print drupal_ucfirst(check_plain($categories['name'])) . '(' .  $categories . ')';?> </a>
         <?php
-        print check_same_filter($opensearchserver_data['tq'],$categories['name']) ? '</b>':'';
+        print check_same_filter($opensearchserver_data['tq'] , $categories['name']) ? '</b>':'';
         ?>
         </li>
         <?php
@@ -65,10 +65,10 @@
       </ul>
       </div>
       <br/>
+      <div class="oss_facet_type">
       <?php
       if ($opensearchserver_data['date_filter']) {
       ?>
-        <div class="oss_facet_type">
         <?php print check_plain(t('Date'));?>
         <ul>
         <?php
@@ -78,46 +78,46 @@
             ?>
             <li>
             <?php
-            print check_same_filter($opensearchserver_data['ts'],$time_stamp) ? '<b>':'';
+            print check_same_filter($opensearchserver_data['ts'] , $time_stamp) ? '<b>':'';
             ?>
-            <a href="<?php print generate_filter_link($opensearchserver_data['q'],'&ts=',$time_stamp);?>"> <?php print drupal_ucfirst(check_plain($time_stamp));?> </a>
+            <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&ts=' , $time_stamp);?>"> <?php print drupal_ucfirst(check_plain($time_stamp));?> </a>
             <?php
-            print check_same_filter($opensearchserver_data['ts'],$time_stamp) ? '</b>':'';
+            print check_same_filter($opensearchserver_data['ts'] , $time_stamp) ? '</b>' : '';
             ?>
             </li>
             <?php
           }
         }
+      }
+      ?>
+      </ul>
+      </div>
+      <?php
+      if ($opensearchserver_data['enable_language_filter']) {
         ?>
-        </ul>
-        </div>
         <br/>
+        <div class="oss_facet_type">
+        <?php print check_plain(t('Language'));?>
+        <ul>
         <?php
-        if ($opensearchserver_data['enable_language_filter']) {
+        foreach ($opensearchserver_data['oss_result_facet']->getFacet('lang') as $language) {
           ?>
-          <div class="oss_facet_type">
-          <?php print check_plain(t('Language'));?>
-          <ul>
+          <li>
           <?php
-          foreach ($opensearchserver_data['oss_result_facet']->getFacet('lang') as $language) {
-            ?>
-            <li>
-            <?php
-            print check_same_filter($opensearchserver_data['lq'],$language['name']) ? '<b>':'';
-            ?>
-            <a href="<?php print generate_filter_link($opensearchserver_data['q'],'&lq=',$language['name']);?>"> <?php print drupal_ucfirst(check_plain(get_local_facet($language['name']))) . '(' .  $language . ')';?> </a>
-            <?php
-            print check_same_filter($opensearchserver_data['lq'],$language['name']) ? '</b>':'';
-            ?>
-            </li>
-            <?php
-          }
+          print check_same_filter($opensearchserver_data['lq'] , $language['name']) ? '<b>':'';
+          ?>
+          <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&lq=' , $language['name']);?>"> <?php print drupal_ucfirst(check_plain(get_local_facet($language['name']))) . '(' .  $language . ')';?> </a>
+          <?php
+          print check_same_filter($opensearchserver_data['lq'] , $language['name']) ? '</b>':'';
+          ?>
+          </li>
+          <?php
+        }
           ?>
           </ul>
           </div>
     <?php
         }
-      }
       ?>
     </div>
     </td>
@@ -149,7 +149,7 @@
         <?php
         if ($opensearchserver_data['signature'] == 1) {?>
           <div class="oss_result_field3"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)));?>"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE));?></a>&nbsp;&nbsp;
-          <?php print $type;?> By <a href="<?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_url', TRUE));?>"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE));?></a>
+          <?php  print check_plain(drupal_ucfirst($opensearchserver_data['oss_result']->getField($i, 'type', TRUE)));?> By <a href="<?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_url', TRUE));?>"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_name', TRUE));?></a>
           </div>
           <?php
         }
@@ -169,10 +169,10 @@
         <?php
         if ($opensearchserver_data['signature'] == 1) {
           ?>
-          <div class="oss_result_field3"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)))?>"><?php print opensearchserver_create_url_snippet($url, $opensearchserver_data['url_snippet']);?> </a>&nbsp;&nbsp;
+          <div class="oss_result_field3"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)))?>"><?php print opensearchserver_create_url_snippet($opensearchserver_data['oss_result']->getField($i, 'url', TRUE), $opensearchserver_data['url_snippet']);?> </a>&nbsp;&nbsp;
           <?php
-          if (stripslashes($opensearchserver_data['oss_result']->getField($i, 'user', TRUE)) && stripslashes($opensearchserver_data['oss_result']->getField($i, 'type', TRUE))) {
-            print check_plain($type);?> By <a href="<?php print check_url(tripslashes($opensearchserver_data['oss_result']->getField($i, 'user_url', TRUE)));?>"><?php check_plain(print stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_name', TRUE)));?></a>
+          if ($opensearchserver_data['oss_result']->getField($i, 'user_name', TRUE) && $opensearchserver_data['oss_result']->getField($i, 'type', TRUE)) {
+            print check_plain(drupal_ucfirst($opensearchserver_data['oss_result']->getField($i, 'type', TRUE)));?> By <a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_url', TRUE)));?>"><?php check_plain(print stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_name', TRUE)));?></a>
             <?php
           }
           ?>

@@ -686,7 +686,7 @@ SQL;
  * Creating documents for index
  */
 
-function create_index_document($document, $resultdoc , $taxonomyarray_data,$language) {
+function create_index_document($document, $resultdoc , $taxonomyarray_data , $language) {
   global $base_url;
   $document->newField('id', $resultdoc->type . '_' . $resultdoc->nid);
   if ($resultdoc->created) {
@@ -715,14 +715,13 @@ function create_index_document($document, $resultdoc , $taxonomyarray_data,$lang
     FROM
     {languages}
     WHERE
-    languages.language='%s' AND languages.enabled='%d'", $resultdoc->language,'1'
+    languages.language='%s' AND languages.enabled='%d'", $resultdoc->language, '1'
   );
   $url_prefix_object = db_fetch_object($url_prefix);
   $urlalise_object = db_fetch_object($urlalise);
   if ($urlalise_object) {
-    $url_alise = $url_prefix_object->prefix ? $url_prefix_object->prefix.'/'.$urlalise_object->dst : $urlalise_object->dst;
+    $url_alise = $url_prefix_object->prefix ? $url_prefix_object->prefix . '/' . $urlalise_object->dst : $urlalise_object->dst;
     $url = url($url_alise, array('absolute' => TRUE));
-    
     $document->newField('url', $url);
   }
   else {
@@ -792,7 +791,7 @@ function generate_documents_to_index() {
                 );
                 $taxonomyarray_data = db_fetch_object($taxonomy_data);
                 $document = $index->newDocument($language->language);
-                create_index_document($document, $resultdoc, $taxonomyarray_data,$language->language);
+                create_index_document($document, $resultdoc, $taxonomyarray_data , $language->language);
                 get_comment_documents($resultdoc);
               }
             }
