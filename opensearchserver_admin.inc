@@ -141,7 +141,7 @@ function opensearchserver_admin() {
   $form['details']['key'] = array(
     '#type'  => 'textfield',
     '#title'  => t('OpenSearchServer Key'),
-    '#description'  => t('Used for authentication, this key is provided when a new user is  created  in the OpenSearchServer instance.'),
+    '#description'  => t('Used for authentication, this key is provided when a new user is created in the OpenSearchServer instance.'),
     '#default_value'  => check_plain($settings->key),
   );
   $form['autocomplete']['autocomplete_index'] = array(
@@ -201,7 +201,6 @@ function opensearchserver_admin() {
     '#title' => t('Signature'),
     '#default_value' => check_plain($settings->signature),
   );
-
   $form['fields']['filters'] = array(
     '#type' => 'checkbox',
     '#description' => t('Checking this box will allow to filter the search results based on Types, Categories and Dates.'),
@@ -215,10 +214,10 @@ function opensearchserver_admin() {
     '#default_value' => check_plain($settings->noresult_filter_enable),
   );
   $form['fields']['enable_language_filter'] = array(
-      '#type' => 'checkbox',
-      '#description' => t('Checking this box will enable language filter.'),
-      '#title' => t('Enable filters for locale'),
-      '#default_value' => check_plain($settings->enable_language_filter),
+    '#type' => 'checkbox',
+    '#description' => t('Checking this box will enable language filter.'),
+    '#title' => t('Enable filters for locale'),
+    '#default_value' => check_plain($settings->enable_language_filter),
   );
   $categories_data = db_query("
     SELECT
