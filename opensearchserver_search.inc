@@ -122,31 +122,34 @@ function opensearchserver_search() {
   $opensearchserver_data['q']=$arg[2];
   $result=opensearchserver_get_search_result($arg[2], TRUE);
   $result_facet=opensearchserver_get_search_result($arg[2], FALSE);
-  $opensearchserver_data['paging']=opensearchserver_paging($result);
-  $timestamp_array = array("past24" => "Past 24 hours", "pastweek" => "Past week", "pastmonth" => "Past month", "pastyear" => "Past year");
-  $opensearchserver_data['tq'] = $tq;
-  $opensearchserver_data['fq'] = $fq;
-  $opensearchserver_data['ts'] = $ts;
-  $opensearchserver_data['lq'] = $lq;
-  $opensearchserver_data['result'] = $result;
-  $opensearchserver_data['result_facet'] = $result_facet;
-  $opensearchserver_data['base_url'] = $base_url;
-  $opensearchserver_data['block_text'] = $search_settings->block_text;
-  $opensearchserver_data['no_filter'] = $search_settings->noresult_filter_enable;
-  $opensearchserver_data['filter_enabled'] = $search_settings->filter_enabled;
-  $opensearchserver_data['date_filter'] = $search_settings->date_filter;
-  $opensearchserver_data['signature'] = $search_settings->signature;
-  $opensearchserver_data['url_snippet'] = $search_settings->url_snippet;
+  if (isset($result) && $result instanceof SimpleXMLElement && isset($result_facet) && $result_facet instanceof SimpleXMLElement) {
+    $opensearchserver_data['paging']=opensearchserver_paging($result);
+    $timestamp_array = array("past24" => "Past 24 hours", "pastweek" => "Past week", "pastmonth" => "Past month", "pastyear" => "Past year");
+    $opensearchserver_data['tq'] = $tq;
+    $opensearchserver_data['fq'] = $fq;
+    $opensearchserver_data['ts'] = $ts;
+    $opensearchserver_data['lq'] = $lq;
+    $opensearchserver_data['result'] = $result;
+    $opensearchserver_data['result_facet'] = $result_facet;
+    $opensearchserver_data['base_url'] = $base_url;
+    $opensearchserver_data['block_text'] = $search_settings->block_text;
+    $opensearchserver_data['no_filter'] = $search_settings->noresult_filter_enable;
+    $opensearchserver_data['filter_enabled'] = $search_settings->filter_enabled;
+    $opensearchserver_data['date_filter'] = $search_settings->date_filter;
+    $opensearchserver_data['signature'] = $search_settings->signature;
+    $opensearchserver_data['url_snippet'] = $search_settings->url_snippet;
+    $opensearchserver_data['time_stamp'] = $timestamp_array;
+    $opensearchserver_data['enable_language_filter'] = $search_settings->enable_language_filter;
+    $opensearchserver_data['oss_result'] = get_search_result($result);
+    $opensearchserver_data['oss_result_facet'] = get_search_result($result_facet);
+    $opensearchserver_data['result_time'] = get_result_time($opensearchserver_data['result']);
+    $opensearchserver_data['filter_result'] = get_filter_result($opensearchserver_data['oss_result'], $opensearchserver_data['filter_enabled'], $opensearchserver_data['block_text'] , $opensearchserver_data['no_filter']);
+    $opensearchserver_data['facet_everything'] = get_facet_everything($opensearchserver_data['fq'], $opensearchserver_data['tq'], $opensearchserver_data['ts'], $opensearchserver_data['oss_result_facet'], $opensearchserver_data['oss_result']);
+    $opensearchserver_data['print_facet_everything'] = generate_facet_everything($opensearchserver_data['facet_everything'], $opensearchserver_data['q']);
+  }
   $opensearchserver_data['form'] = drupal_get_form('opensearchserver_page_form');
-  $opensearchserver_data['time_stamp'] = $timestamp_array;
-  $opensearchserver_data['enable_language_filter'] = $search_settings->enable_language_filter;
-  $opensearchserver_data['oss_result'] = get_search_result($result);
-  $opensearchserver_data['oss_result_facet'] = get_search_result($result_facet);
-  $opensearchserver_data['result_time'] = get_result_time($opensearchserver_data['result']);
-  $opensearchserver_data['filter_result'] = get_filter_result($opensearchserver_data['oss_result'], $opensearchserver_data['filter_enabled'], $opensearchserver_data['block_text'] , $opensearchserver_data['no_filter']);
-  $opensearchserver_data['facet_everything'] = get_facet_everything($opensearchserver_data['fq'], $opensearchserver_data['tq'], $opensearchserver_data['ts'], $opensearchserver_data['oss_result_facet'], $opensearchserver_data['oss_result']);
-  $opensearchserver_data['print_facet_everything'] = generate_facet_everything($opensearchserver_data['facet_everything'], $opensearchserver_data['q']);
   return theme('opensearchserver_search', $opensearchserver_data);
+
 }
 
 
