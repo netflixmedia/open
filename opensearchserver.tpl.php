@@ -5,12 +5,12 @@
  * Template file to show search result
  */
   print $opensearchserver_data['form'];
+  if ($opensearchserver_data['q'] && isset($opensearchserver_data['result']) && $opensearchserver_data['result'] instanceof SimpleXMLElement) {
 ?>
-  <div id="results">
+  <div class="oss-results">
   <table border="0" width="100%">
   <tr>
   <?php
-  if ($opensearchserver_data['q']) {
     if ($opensearchserver_data['oss_result']->getResultFound() > 0 && $opensearchserver_data['q'] != $opensearchserver_data['block_text']) {
     ?>
     <div align="left">
@@ -20,9 +20,9 @@
     }
     if ($opensearchserver_data['filter_result']) {
     ?>
-      <td width="25%">
-      <div class="oss_facet">
-      <div class="oss_facet_type"><?php print check_plain(t('Type'));?>
+      <td width="25%" valign="top">
+      <div class="oss-facet">
+      <div class="oss-facet-type"><?php print check_plain(t('Type'));?>
       <ul>
       <?php
       print $opensearchserver_data['print_facet_everything'];
@@ -43,7 +43,7 @@
       </ul>
       </div>
       <br/>
-      <div class="oss_facet_type">
+      <div class="oss-facet-type">
       <?php print check_plain(t('Categories'));?>
       <ul>
       <?php
@@ -65,7 +65,7 @@
       </ul>
       </div>
       <br/>
-      <div class="oss_facet_type">
+      <div class="oss-facet-type">
       <?php
       if ($opensearchserver_data['date_filter']) {
       ?>
@@ -96,7 +96,7 @@
       if ($opensearchserver_data['enable_language_filter']) {
         ?>
         <br/>
-        <div class="oss_facet_type">
+        <div class="oss-facet-type">
         <?php print check_plain(t('Language'));?>
         <ul>
         <?php
@@ -124,9 +124,9 @@
     <?php
     }
     ?>
-    <td width="75%">
+    <td width="75%" valign="top">
     <?php if ($opensearchserver_data['oss_result']->getResultFound() <= 0 || $search_query == $opensearchserver_data['block_text']) {?>
-      <div align="left" class="oss_error">
+      <div align="left" class="oss-error">
       <?php if ($search_query == $opensearchserver_data['block_text']) { ?>
         <p>To be processed a query can't be empty and should contains valid words.</p>
       <?php } ?>
@@ -143,12 +143,12 @@
         $category = stripslashes($opensearchserver_data['oss_result']->getField($i, 'type', TRUE));
         if ($category=="comments") {
         ?>
-        <div class="oss_result">
-        <div class="oss_result_field1"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)));?>"><?php print $subject;?></a> </div>
-        <div class="oss_result_field2"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'comments_comment', TRUE));?></div>
+        <div class="oss-result">
+        <div class="oss-result-field1"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)));?>"><?php print $subject;?></a> </div>
+        <div class="oss-result-field2"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'comments_comment', TRUE));?></div>
         <?php
         if ($opensearchserver_data['signature'] == 1) {?>
-          <div class="oss_result_field3"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)));?>"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE));?></a>&nbsp;&nbsp;
+          <div class="oss-result-field3"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)));?>"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE));?></a>&nbsp;&nbsp;
           <?php  print check_plain(drupal_ucfirst($opensearchserver_data['oss_result']->getField($i, 'type', TRUE)));?> By <a href="<?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_url', TRUE));?>"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_name', TRUE));?></a>
           </div>
           <?php
@@ -163,13 +163,13 @@
         }
         else {
         ?>
-        <div class="oss_result">
-        <div class="oss_result_field1"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)));?>"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'title', TRUE));?></a> </div>
-        <div class="oss_result_field2"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'content', TRUE));?></div>
+        <div class="oss-result">
+        <div class="oss-result-field1"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)));?>"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'title', TRUE));?></a> </div>
+        <div class="oss-result-field2"><?php print stripslashes($opensearchserver_data['oss_result']->getField($i, 'content', TRUE));?></div>
         <?php
         if ($opensearchserver_data['signature'] == 1) {
           ?>
-          <div class="oss_result_field3"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)))?>"><?php print opensearchserver_create_url_snippet($opensearchserver_data['oss_result']->getField($i, 'url', TRUE), $opensearchserver_data['url_snippet']);?> </a>&nbsp;&nbsp;
+          <div class="oss-result-field3"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)))?>"><?php print opensearchserver_create_url_snippet($opensearchserver_data['oss_result']->getField($i, 'url', TRUE), $opensearchserver_data['url_snippet']);?> </a>&nbsp;&nbsp;
           <?php
           if ($opensearchserver_data['oss_result']->getField($i, 'user_name', TRUE) && $opensearchserver_data['oss_result']->getField($i, 'type', TRUE)) {
             print check_plain(drupal_ucfirst($opensearchserver_data['oss_result']->getField($i, 'type', TRUE)));?> By <a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_url', TRUE)));?>"><?php check_plain(print stripslashes($opensearchserver_data['oss_result']->getField($i, 'user_name', TRUE)));?></a>
@@ -181,7 +181,7 @@
         }
         else {
         ?>
-        <div class="oss_result_field3"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)))?>"><?php print opensearchserver_create_url_snippet(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)), $opensearchserver_data['url_snippet']);?> </a></div>
+        <div class="oss-result-field3"><a href="<?php print check_url(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)))?>"><?php print opensearchserver_create_url_snippet(stripslashes($opensearchserver_data['oss_result']->getField($i, 'url', TRUE)), $opensearchserver_data['url_snippet']);?> </a></div>
         <?php
         }
       }
@@ -190,12 +190,14 @@
       <?php
       }
       ?>
+      <div class="oss-paging">
       <?php
       foreach ($opensearchserver_data['paging'] as $page) {?>
       <span class="<?php print $page['style']; ?>"> <a href="<?php print $page['url'];?>"><?php print $page['label']; ?></a></span>&nbsp;&nbsp;
       <?php
       }
       ?>
+      </div>
       </div>
       <div align="right" class="oss_logo">
       <img src="http://www.open-search-server.com/images/oss_logo_62x60.png" /><br/>
@@ -205,9 +207,9 @@
     }
     ?>
     </td>
-    <?php
-  }
-  ?>
   </tr>
   </table>
+      <?php
+  }
+  ?>
   </div>
