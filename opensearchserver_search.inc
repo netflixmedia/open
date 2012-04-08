@@ -261,7 +261,7 @@ function opensearchserver_get_search_result($query, $facet) {
     }
     $search->facet('type', 1);
     $search->facet('taxonomy', 1);
-    $search->facet('lang', 1);
+    $search->facet('lang', 0);
     if ($facet) {
       $filter=$_REQUEST['fq'];
       if ($filter && $filter != 'All') {

@@ -209,7 +209,7 @@
     </td>
   </tr>
   </table>
-      <?php
+  </div>
+  <?php
   }
   ?>
-  </div>
