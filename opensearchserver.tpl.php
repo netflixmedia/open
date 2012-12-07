@@ -20,7 +20,7 @@
     }
     if ($opensearchserver_data['filter_result']) {
     ?>
-      <td width="25%" valign="top">
+      <td width="15%" valign="top">
       <div class="oss-facet">
       <div class="oss-facet-type"><?php print check_plain(t('Type'));?>
       <ul>
@@ -125,7 +125,10 @@
     }
     ?>
     <td width="75%" valign="top">
-    <?php if ($opensearchserver_data['oss_result']->getResultFound() <= 0 || $search_query == $opensearchserver_data['block_text']) {?>
+  	<?php
+  		$search_query = $opensearchserver_data['q'];
+  	?>
+    <?php if ($opensearchserver_data['oss_result']->getResultFound() <= 0 ||( $search_query!='' && $search_query == $opensearchserver_data['block_text'])) {?>
       <div align="left" class="oss-error">
       <?php if ($search_query == $opensearchserver_data['block_text']) { ?>
         <p>To be processed a query can't be empty and should contains valid words.</p>
@@ -200,7 +203,7 @@
       </div>
       </div>
       <div align="right" class="oss_logo">
-      <img src="http://www.open-search-server.com/images/oss_logo_62x60.png" /><br/>
+      <img src="http://www.open-search-server.com/oss-head-foot/logo-oss-alpha.png" /><br/>
       <a href="http://www.open-search-server.com/">Enterprise Search Made Yours</a>
       </div>
       <?php

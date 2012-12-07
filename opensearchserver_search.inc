@@ -114,12 +114,12 @@ function opensearchserver_search() {
     FROM
     {opensearchserver}"
   );
-  $search_settings=db_fetch_object($block_tool);
+  $search_settings = db_fetch_object($block_tool);
   $tq = isset($_REQUEST['tq']) ? $_REQUEST['tq'] : NULL;
   $fq = isset($_REQUEST['fq']) ? $_REQUEST['fq'] : NULL;
   $ts = isset($_REQUEST['ts']) ? $_REQUEST['ts'] : NULL;
   $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
-  $opensearchserver_data['q']=$arg[2];
+  $opensearchserver_data['q'] = $arg[2];
   $result=opensearchserver_get_search_result($arg[2], TRUE);
   $result_facet=opensearchserver_get_search_result($arg[2], FALSE);
   if (isset($result) && $result instanceof SimpleXMLElement && isset($result_facet) && $result_facet instanceof SimpleXMLElement) {
@@ -143,7 +143,7 @@ function opensearchserver_search() {
     $opensearchserver_data['oss_result'] = get_search_result($result);
     $opensearchserver_data['oss_result_facet'] = get_search_result($result_facet);
     $opensearchserver_data['result_time'] = get_result_time($opensearchserver_data['result']);
-    $opensearchserver_data['filter_result'] = get_filter_result($opensearchserver_data['oss_result'], $opensearchserver_data['filter_enabled'], $opensearchserver_data['block_text'] , $opensearchserver_data['no_filter']);
+    $opensearchserver_data['filter_result'] = get_filter_result($arg[2], $opensearchserver_data['oss_result'], $opensearchserver_data['filter_enabled'], $opensearchserver_data['block_text'] , $opensearchserver_data['no_filter']);
     $opensearchserver_data['facet_everything'] = get_facet_everything($opensearchserver_data['fq'], $opensearchserver_data['tq'], $opensearchserver_data['ts'], $opensearchserver_data['oss_result_facet'], $opensearchserver_data['oss_result']);
     $opensearchserver_data['print_facet_everything'] = generate_facet_everything($opensearchserver_data['facet_everything'], $opensearchserver_data['q']);
   }
@@ -334,7 +334,7 @@ function generate_url_everything($query) {
  * Check the filter result is available or not
  */
 
-function get_filter_result($oss_result, $filter_enabled , $block_text, $no_filter) {
+function get_filter_result($search_query, $oss_result, $filter_enabled , $block_text, $no_filter) {
   $check_filter_enabled = $filter_enabled == 1 && $search_query != $block_text;
   $check_filter_at_zero_result = $oss_result->getResultFound() <= 0 && $no_filter == 1;
   if ($check_filter_enabled && $check_filter_at_zero_result) {
@@ -346,6 +346,7 @@ function get_filter_result($oss_result, $filter_enabled , $block_text, $no_filte
   else {
     $filter_result = FALSE;
   }
+  
   return  $filter_result;
 }
 
