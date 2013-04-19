@@ -3,7 +3,7 @@
  * Implements hook_init()
  */
 function opensearchserver_init() {
-//check if the opensearchserver library is present in the libraries folder
+  //check if the opensearchserver library is present in the libraries folder
   if (module_exists('libraries')) {
     $library = libraries_get_path('opensearchserver');
     require_once $library .'/oss_api.class.php';

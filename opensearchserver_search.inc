@@ -29,71 +29,61 @@ function opensearchserver_form_alter(&$form, $form_state, $form_id) {
   switch ($form_id_processed) {
     case 'search_form':
       $form['basic']['inline']['keys'] = array(
-        '#type' => 'textfield',
-        '#title' => '',
-        '#default_value'  => $value,
-        '#maxlength' => 255,
+      '#type' => 'textfield',
+      '#title' => '',
+      '#default_value'  => $value,
+      '#maxlength' => 255,
       );
       $form['basic']['inline']['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Search'),
       );
-    $form['#submit'][] = 'opensearchserver_submit';
-    break;
+      $form['#submit'][] = 'opensearchserver_submit';
+      break;
     case 'search_theme_form':
       $form['search_theme_form'] = array(
-        '#type' => 'textfield',
-        '#title' => '',
-        '#size' => 15,
-        '#maxlength' => 255,
+      '#type' => 'textfield',
+      '#title' => '',
+      '#size' => 15,
+      '#maxlength' => 255,
       );
       $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Search'),
       );
       $form['#submit'][] = 'opensearchserver_submit';
-    break;
+      break;
     case 'search_block_form':
       $form['search_block_form'] = array(
-        '#type' => 'textfield',
-        '#title' => '',
-        '#size' => 15,
-        '#maxlength' => 255,
+      '#type' => 'textfield',
+      '#title' => '',
+      '#size' => 15,
+      '#maxlength' => 255,
       );
       $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Search'),
       );
       $form['#submit'][] = 'opensearchserver_submit';
-    break;
+      break;
   }
   unset($form['#token']);
 }
 
 /**
- * Get the language prefix .
- */
-
-function get_language_prefix() {
-  global $language;
-  return $language->prefix ? 'q='. $language->prefix . '/opensearchserver/search/' : 'q=opensearchserver/search/';
-}
-/**
  * Implements form submission.
  */
 
 function opensearchserver_submit($form, &$form_state) {
-  global $language , $base_root;
-  $lang_name = $language->language;
-  $url = get_language_prefix();
+  global $language;
   if ($form_state['values']['search_theme_form']) {
-    drupal_goto($base_root , $url . check_plain($form_state['values']['search_theme_form']) . '&lq=' . $lang_name);
+    $form_state['redirect'] = array('opensearchserver/search/'. check_plain($form_state['values']['search_theme_form']), 'lq='.$language->language);
   }
   elseif ($form_state['values']['search_block_form']) {
-    drupal_goto($base_root , $url . check_plain($form_state['values']['search_block_form']) . '&lq=' . $lang_name);
+    $form_state['redirect'] = array('opensearchserver/search/'. check_plain($form_state['values']['search_block_form']), 'lq='.$language->language);
   }
   else {
-    drupal_goto($base_root, $url . check_plain($form_state['values']['keys']) . '&lq=' . $lang_name);
+    $form_state['redirect'] = array('opensearchserver/search/'. check_plain($form_state['values']['keys']), 'lq='.$language->language);
   }
 }
 /**
@@ -166,41 +156,41 @@ function get_search_result($result) {
 
 function opensearchserver_paging($result) {
   if ($result != NULL) {
-  $oss_paging = new OssPaging($result, 'r', 'p');
-  $paging_array = array();
-  if (isset($oss_paging) && $oss_paging->getResultTotal() >= 1) {
-    if ($oss_paging->getResultLow() > 0) {
-      $style='oss_pager_first';
-      $label = 'First';
-      $url = $oss_paging->getPageBaseURI() . '1';
-      $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
-    }
-    if ($oss_paging->getResultPrev() < $oss_paging->getResultCurrentPage()) {
-      $style='oss_pager_prev';
-      $label = 'Previous';
-      $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultPrev() + 1);
-      $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
-    }
-    for ($i = $oss_paging->getResultLow(); $i < $oss_paging->getResultHigh(); $i++) {
-      $style='oss_pager_number';
-      if ($i == $oss_paging->getResultCurrentPage()) {
-        $label = $i + 1;
-        $url = NULL;
+    $oss_paging = new OssPaging($result, 'r', 'p');
+    $paging_array = array();
+    if (isset($oss_paging) && $oss_paging->getResultTotal() >= 1) {
+      if ($oss_paging->getResultLow() > 0) {
+        $style='oss_pager_first';
+        $label = 'First';
+        $url = $oss_paging->getPageBaseURI() . '1';
+        $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
       }
-      else {
-        $label = $i + 1;
-        $url = $oss_paging->getPageBaseURI() . $label;
+      if ($oss_paging->getResultPrev() < $oss_paging->getResultCurrentPage()) {
+        $style='oss_pager_prev';
+        $label = 'Previous';
+        $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultPrev() + 1);
+        $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
       }
-      $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
+      for ($i = $oss_paging->getResultLow(); $i < $oss_paging->getResultHigh(); $i++) {
+        $style='oss_pager_number';
+        if ($i == $oss_paging->getResultCurrentPage()) {
+          $label = $i + 1;
+          $url = NULL;
+        }
+        else {
+          $label = $i + 1;
+          $url = $oss_paging->getPageBaseURI() . $label;
+        }
+        $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
+      }
+      if ($oss_paging->getResultNext() > $oss_paging->getResultCurrentPage()) {
+        $style='oss_pager_next';
+        $label = 'Next';
+        $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultNext() + 1);
+        $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
+      }
     }
-    if ($oss_paging->getResultNext() > $oss_paging->getResultCurrentPage()) {
-      $style='oss_pager_next';
-      $label = 'Next';
-      $url = $oss_paging->getPageBaseURI() . ($oss_paging->getResultNext() + 1);
-      $paging_array[] = array('style' => $style, 'label' => $label, 'url' => $url);
-    }
-  }
-  return $paging_array;
+    return $paging_array;
   }
 }
 
@@ -304,10 +294,8 @@ function opensearchserver_get_search_result($query, $facet) {
  */
 
 function opensearchserver_page_form_submit($form_id, &$form_state) {
-  global $language, $base_url;
-  $lang_name = $language->language;
-  $url = get_language_prefix();
-  drupal_goto($base_url, $url . check_plain($form_state['values']['q']) . '&lq=' . $lang_name);
+  global $language;
+  $form_state['redirect'] = array('opensearchserver/search/'. check_plain($form_state['values']['q']), 'lq='.$language->language);
 }
 
 function generate_facet_everything($facet_everything, $query) {
@@ -326,7 +314,7 @@ function generate_facet_everything($facet_everything, $query) {
 
 function generate_url_everything($query) {
   $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
-  $url = '?' . get_language_prefix() . drupal_urlencode($query) . '&lq=' . $lq;
+  $url = '?' . drupal_urlencode($query) . '&lq=' . $lq;
   return '<a id="oss_facet" href="'. $url .'"> Everything</a>';
 }
 
@@ -346,7 +334,7 @@ function get_filter_result($search_query, $oss_result, $filter_enabled , $block_
   else {
     $filter_result = FALSE;
   }
-  
+
   return  $filter_result;
 }
 
@@ -378,12 +366,10 @@ function get_local_facet($lang) {
  * Generate the filter for link
  */
 function generate_filter_link($q, $facet_name , $facet_value) {
-  $base = '?' . get_language_prefix();
   $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
   if ($facet_name != '&lq=') {
     return $base . drupal_urlencode($q) . $facet_name . drupal_urlencode($facet_value) . '&lq=' . $lq;
-  }
-  else {
+  } else {
     return $base . drupal_urlencode($q) . $facet_name . drupal_urlencode($facet_value);
   }
 }
