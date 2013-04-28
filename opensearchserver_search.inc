@@ -250,7 +250,9 @@ function opensearchserver_get_search_result($query, $facet) {
       $search->setCustomLog (3, $_SERVER['REMOTE_ADDR']);
     }
     $search->facet('type', 1);
-    $search->facet('taxonomy', 1);
+    foreach (get_drupal_categories() as $oss_taxonomy) {
+      $search->facet('taxo_'.$oss_taxonomy->id, 1, true);
+    }
     $search->facet('lang', 0);
     if ($facet) {
       $filter=$_REQUEST['fq'];
@@ -263,9 +265,11 @@ function opensearchserver_get_search_result($query, $facet) {
           $search->filter('lang:"' . $lang_filter . '"');
         }
       }
-      $filter_categories=$_REQUEST['tq'];
-      if ($filter_categories && $filter_categories != 'All') {
-        $search->filter('taxonomy:"' . $filter_categories . '"');
+      foreach (get_drupal_categories() as $oss_taxonomy) {
+        $filter_categories=$_REQUEST['t'.$oss_taxonomy->id];
+        if ($filter_categories && $filter_categories != 'All') {
+          $search->filter('taxo_'.$oss_taxonomy->id.':"' . $filter_categories . '"');
+        }
       }
       $timestamp_filter=$_REQUEST['ts'];
       if ($timestamp_filter && $timestamp_filter != 'All') {

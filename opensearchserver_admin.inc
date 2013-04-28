@@ -34,6 +34,10 @@ SQL;
  */
 
 function get_drupal_types() {
+  global $oss_types;
+  if (isset($oss_types)) {
+    return $oss_types;
+  }
   $query_type = <<<SQL
     SELECT DISTINCT
     type,
@@ -41,22 +45,41 @@ function get_drupal_types() {
     enabled
     FROM {opensearchserver_type}
 SQL;
-  return db_query($query_type);
+  $stmt = db_query($query_type);
+  $oss_types = array();
+  while ($oss_type = db_fetch_object($stmt)) {
+    if ($oss_type->enabled == 1) {
+      $oss_types[$oss_type->type] = $oss_type;
+    }
+  }
+  return $oss_types;
 }
 /**
  * Getting Drupal field types from database
  */
 
 function get_drupal_categories() {
+  global $oss_taxonomies;
+  if (isset($oss_taxonomies)) {
+    return $oss_taxonomies;
+  }
   $query_categories = <<<SQL
     SELECT
     DISTINCT
+    `id`,
     `categories`,
     `enabled`
     FROM
     {opensearchserver_categories}
 SQL;
-  return db_query($query_categories);
+  $stmt = db_query($query_categories);
+  $oss_taxonomies = array();
+  while ($oss_taxonomy = db_fetch_object($stmt)) {
+    if ($oss_taxonomy->enabled == 1) {
+      $oss_taxonomies[$oss_taxonomy->categories] = $oss_taxonomy;
+    }
+  }
+  return $oss_taxonomies;
 }
 
 /**
@@ -156,39 +179,17 @@ function opensearchserver_admin() {
     '#description'  => t('Name of the AutoComplete QueryTemplate Name '),
     '#default_value'  => check_plain($settings->autocomplete_query),
   );
-  //Get the field type to be indexed
-  $count = db_result(db_query("
-    SELECT
-    COUNT(*)
-    FROM
-    {opensearchserver_type}"
-  ));
 
-  $types_from_ossdb = get_drupal_types();
-  $result = db_query("
-    SELECT
-    name, type
-    FROM
-    {node_type}"
-  );
+  /* Load type from OSS db */
+  $oss_types = get_drupal_types();
+  foreach (node_get_types() as $drupal_type) {
+    $form['fields']['type_'.$drupal_type->type] = array(
+      '#type' => 'checkbox',
+      '#title' => check_plain($drupal_type->name),
+      '#default_value' => check_plain(array_key_exists($drupal_type->type, $oss_types) ? 1 : 0),
+    );
+  }
 
-  if ($count > 0) {
-    while ($drupal_types = db_fetch_object($types_from_ossdb)) {
-      $form['fields'][$drupal_types->type] = array(
-        '#type' => 'checkbox',
-        '#title' => check_plain($drupal_types->name),
-        '#default_value' => check_plain($drupal_types->enabled),
-      );
-    }
-  }
-  else {
-    while ($results = db_fetch_object($result)) {
-      $form['fields'][$results->type] = array(
-        '#type' => 'checkbox',
-        '#title' => check_plain($results->name),
-      );
-    }
-  }
   $form['fields']['delay'] = array(
     '#type' => 'select',
     '#title' => 'Select the Indexing interval (in minutes)',
@@ -226,37 +227,14 @@ function opensearchserver_admin() {
     {term_data}"
   );
 
-  $category_count = db_result(db_query("
-    SELECT
-    COUNT(*)
-    FROM
-    {opensearchserver_categories}"
-  ));
-
-  $category_type = db_query("
-    SELECT
-    DISTINCT
-    id, categories, enabled
-    FROM
-    {opensearchserver_categories}"
-  );
-
-  if ($category_count > 0) {
-    while ($cate = db_fetch_object($category_type)) {
-      $form['categories'][str_replace(' ', '_', $cate->categories)] = array(
-        '#type' => 'checkbox',
-        '#title' => check_plain($cate->categories),
-        '#default_value' => check_plain($cate->enabled),
-      );
-    }
-  }
-  else {
-    while ($category = db_fetch_object($categories_data)) {
-      $form['categories'][str_replace(' ', '_', $category->name)] = array(
-        '#type' => 'checkbox',
-        '#title' => check_plain($category->name),
-      );
-    }
+  /* Load taxonomies from OSS db */
+  $oss_taxonomies = get_drupal_categories();
+  foreach (taxonomy_get_vocabularies() as $vocabulary) {
+    $form['categories']['taxo_'.$voc_name = str_replace(' ', '_', $vocabulary->name)] = array(
+      '#type' => 'checkbox',
+      '#title' => check_plain($vocabulary->name),
+      '#default_value' => check_plain(array_key_exists($vocabulary->name, $oss_taxonomies) ? 1 : 0),
+    );
   }
 
   //creating form fields for snippet
@@ -532,14 +510,8 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
     $form_state['values']['autocomplete_index'],
     $form_state['values']['autocomplete_query']
   );
-  $types = db_query("
-    SELECT
-    DISTINCT
-    type, name
-    FROM {node_type}"
-  );
 
-  while ($type = db_fetch_object($types)) {
+  foreach (node_get_types() as $type) {
     db_query("
       INSERT INTO
       `{opensearchserver_type}`
@@ -552,19 +524,11 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
       )",
       $type->type,
       $type->name,
-      $form_state['values'][$type->type]
+      $form_state['values']['type_'.$type->type]
     );
   }
 
-  $categories = db_query("
-    SELECT
-    DISTINCT
-    vid, name
-    FROM
-    {term_data}"
-  );
-
-  while ($category = db_fetch_object($categories)) {
+  foreach (taxonomy_get_vocabularies() as $vocabulary) {
     db_query("
       INSERT INTO `{opensearchserver_categories}`
       (
@@ -573,8 +537,8 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
       VALUES
       (
       '%s', '%s',  '%d')",
-      $category->vid, $category->name,
-      $form_state['values'][str_replace(' ',  '_',  $category->name)]
+      $vocabulary->vid, $vocabulary->name,
+      $form_state['values']['taxo_'.str_replace(' ',  '_',  $vocabulary->name)]
     );
   }
   drupal_set_message(t('Settings has been Updated'));
@@ -588,41 +552,45 @@ function opensearchserver_drupl_schema($url,  $indexname,  $username,  $key) {
   $snippet = get_settings_query();
   $snippet_value = db_fetch_object($snippet);
   $oss_api = get_oss_api($url, $username, $key, $indexname);
-  $oss_api->setField('id', '', 'NO', 'YES', 'YES', 'NO', 'YES');
-  $oss_api->setField('lang', '', 'NO', 'YES', 'YES', 'NO', 'NO');
-  $oss_api->setField('type', '', 'NO', 'YES', 'YES', 'NO', 'NO');
-  $oss_api->setField('taxonomy', '', 'NO', 'YES', 'YES', 'NO', 'NO');
-  $oss_api->setField('content_timestamp', '', 'NO', 'YES', 'YES', 'NO', 'NO');
-  $oss_api->setField('url', '', 'NO', 'YES', 'YES', 'NO', 'NO');
-  $oss_api->setField('title', 'TextAnalyzer', 'compress', 'YES', 'positions_offsets', 'NO', 'NO');
+  $oss_api->setField('id', '', 'NO', 'YES', 'NO', 'NO', 'YES');
+  $oss_api->setField('lang', '', 'NO', 'YES', 'NO', 'NO', 'NO');
+  $oss_api->setField('type', '', 'NO', 'YES', 'NO', 'NO', 'NO');
+  foreach (get_drupal_categories() as $oss_taxonomy) {
+    $oss_api->setField('taxo_'.$oss_taxonomy->id, '', 'NO', 'YES', 'NO', 'NO', 'NO');
+  }
+  $oss_api->setField('content_timestamp', '', 'NO', 'YES', 'NO', 'NO', 'NO');
+  $oss_api->setField('url', '', 'NO', 'YES', 'NO', 'NO', 'NO');
+  $oss_api->setField('title', 'TextAnalyzer', 'NO', 'YES', 'positions_offsets', 'NO', 'NO');
   $oss_api->setField('autocomplete', 'AutoCompletionAnalyzer', 'NO', 'YES', 'NO', 'NO', 'NO');
   $oss_api->setField('content', 'TextAnalyzer', 'compress', 'YES', 'positions_offsets', 'YES', 'NO');
-  $oss_api->setField('timestamp', '', 'NO', 'YES', 'YES', 'NO', 'NO');
-  $oss_api->setField('comments_subject', 'TextAnalyzer', 'compress', 'YES', 'positions_offsets', 'NO', 'NO');
+  $oss_api->setField('timestamp', '', 'NO', 'YES', 'NO', 'NO', 'NO');
+  $oss_api->setField('comments_subject', 'TextAnalyzer', 'NO', 'YES', 'positions_offsets', 'NO', 'NO');
   $oss_api->setField('comments_comment', 'TextAnalyzer', 'compress', 'YES', 'positions_offsets', 'NO', 'NO');
-  $oss_api->setField('user_name', 'TextAnalyzer', 'compress', 'YES', 'positions_offsets', 'NO', 'NO');
-  $oss_api->setField('user_email', 'TextAnalyzer', 'compress', 'YES', 'positions_offsets', 'NO', 'NO');
-  $oss_api->setField('user_url', '', 'NO', 'YES', 'YES', 'NO', 'NO');
+  $oss_api->setField('user_name', 'TextAnalyzer', 'NO', 'YES', 'positions_offsets', 'NO', 'NO');
+  $oss_api->setField('user_email', 'TextAnalyzer', 'NO', 'YES', 'positions_offsets', 'NO', 'NO');
+  $oss_api->setField('user_url', '', 'NO', 'YES', 'NO', 'NO', 'NO');
   $search_template=new OssSearchTemplate($url, $indexname);
   $search_template->credential($username, $key);
-  $search_template->createSearchTemplate("search", '
+  $search_template->createSearchTemplate('search', '
     title:($$)^10 OR title:("$$")^10 OR
-    content:($$)^10 OR content:("$$")^10 OR
-    comments_subject:($$)^10 OR comments_subject:("$$")^10 OR
-    comments_comment:($$)^10 OR comments_comment:("$$")^10',
+    content:($$)^1 OR content:("$$")^1 OR
+    comments_subject:($$)^0.2 OR comments_subject:("$$")^0.2 OR
+    comments_comment:($$)^0.1 OR comments_comment:("$$")^0.1',
     "AND", "10", "2", "ENGLISH");
-  $search_template->setSnippetField("search", "title", $snippet_value->title_snippet, "b", "1", "NoFragmenter");
-  $search_template->setSnippetField("search", "content", $snippet_value->content_snippet, "b", "1", "SentenceFragmenter");
-  $search_template->setReturnField("search", "url");
-  $search_template->setReturnField("search", "user_url");
-  $search_template->setReturnField("search", "type");
-  $search_template->setReturnField("search", "taxonomy");
-  $search_template->setReturnField("search", "lang");
-  $search_template->setReturnField("search", "content_timestamp");
-  $search_template->setSnippetField("search", "comments_comment", "200", "b", "1", "SentenceFragmenter");
-  $search_template->setSnippetField("search", "comments_subject", "150", "b", "1", "NoFragmenter");
-  $search_template->setSnippetField("search", "user_name", "70", "b", "1", "NoFragmenter");
-  $search_template->setSnippetField("search", "user_email", "70", "b", "1", "NoFragmenter");
+  $search_template->setSnippetField('search', "title", $snippet_value->title_snippet, "b", "1", "NoFragmenter");
+  $search_template->setSnippetField('search', "content", $snippet_value->content_snippet, "b", "1", "SentenceFragmenter");
+  $search_template->setReturnField('search', "url");
+  $search_template->setReturnField('search', "user_url");
+  $search_template->setReturnField('search', "type");
+  foreach (get_drupal_categories() as $oss_taxonomy) {
+    $search_template->setReturnField('search', 'taxo_'.$oss_taxonomy->id);
+  }
+  $search_template->setReturnField('search', "lang");
+  $search_template->setReturnField('search', "content_timestamp");
+  $search_template->setSnippetField('search', "comments_comment", "200", "b", "1", "SentenceFragmenter");
+  $search_template->setSnippetField('search', "comments_subject", "150", "b", "1", "NoFragmenter");
+  $search_template->setSnippetField('search', "user_name", "70", "b", "1", "NoFragmenter");
+  $search_template->setSnippetField('search', "user_email", "70", "b", "1", "NoFragmenter");
 }
 /**
  * Get total documents from db
@@ -684,54 +652,8 @@ SQL;
   }
   return $sql;
 }
-/*
- * Get taxomomy associated with the node.
-*/
-function get_taxonomies($nid) {
-  $node = node_load($nid);
-  $taxonomy = '';
-  if (!empty($node->taxonomy)) {
-    foreach ($node->taxonomy as $tid => $term) {
-      $taxonomy = $term->name;
-    }
-  }
-  return $taxonomy;
-}
 
-/*
- * Check the category is enabled.
-*/
 
-function check_category_enabled($nid) {
-  $categories = get_drupal_categories();
-  while ($category = db_fetch_object($categories)) {
-    $node = node_load($nid);
-    if (!empty($node->taxonomy)) {
-      foreach ($node->taxonomy as $tid => $term) {
-        $name = $term->name;
-        if($name == $category->categories && $category->enabled == 1 ) {
-          return TRUE;
-          break;
-        }
-      }
-    }
-  }
-  return FALSE;
-}
-
-/*
- * Check the category need to be used
-*/
-function check_some_category_enabled() {
-  $categories = get_drupal_categories();
-  while ($category = db_fetch_object($categories)) {
-    if($category->enabled == 1 ) {
-      return TRUE;
-      break;
-    }
-  }
-  return FALSE;
-}
 /*
  * Get url alise if available
 */
@@ -772,43 +694,46 @@ function get_url_alise($nid) {
 
 function create_index_document($document, $resultdoc , $language) {
   global $base_url;
-  $categories = get_drupal_categories();
-  if(check_some_category_enabled()) {
-    $enabled = check_category_enabled($resultdoc->nid);
-  }else {
-    $enabled = TRUE;
+  $node = node_load($resultdoc->nid);
+  $document->newField('id', $resultdoc->type . '_' . $resultdoc->nid);
+  if ($resultdoc->created) {
+    $document->newField('content_timestamp', date('YmdHis', $resultdoc->created));
   }
-  if($enabled == TRUE){
-    $document->newField('id', $resultdoc->type . '_' . $resultdoc->nid);
-    if ($resultdoc->created) {
-      $document->newField('content_timestamp', date('YmdHis', $resultdoc->created));
-    }
-    else {
-      $document->newField('content_timestamp', date('YmdHis', $resultdoc->changed));
-    }
-    $taxonomies = get_taxonomies($resultdoc->nid) ;
-    $document->newField('taxonomy')->newValue(html_entity_decode($taxonomies, ENT_QUOTES, 'UTF-8'), TRUE);
-    $document->newField('lang')->newValue(html_entity_decode($resultdoc->language, ENT_QUOTES, 'UTF-8'), TRUE);
-    $document->newField('type')->newValue(html_entity_decode($resultdoc->type, ENT_QUOTES, 'UTF-8'), TRUE);
-    $document->newField('title')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), TRUE);
-    $document->newField('content')->newValue(html_entity_decode($resultdoc->body, ENT_QUOTES, 'UTF-8'), TRUE);
-    $document->newField('autocomplete')->newValue(html_entity_decode($resultdoc->body, ENT_QUOTES, 'UTF-8'), TRUE);
-    $document->newField('autocomplete')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), TRUE);
-    $document->newField('url', get_url_alise($resultdoc->nid));
-    $user_url = drupal_get_path_alias('user/' . $resultdoc->uid);
-    $user=user_load($resultdoc->uid);
-    $document->newField('timestamp', $resultdoc->timestamp);
-    $document->newField('user_name', $user->name);
-    $document->newField('user_email', $user->mail);
-    $document->newField('user_url', url($user_url , array('absolute' => TRUE)));
+  else {
+    $document->newField('content_timestamp', date('YmdHis', $resultdoc->changed));
   }
+
+  if (!empty($node->taxonomy)) {
+    foreach (get_drupal_categories() as $oss_taxonomy) {
+      $field = $document->newField('taxo_'.$oss_taxonomy->id);
+      foreach ($node->taxonomy as $term) {
+        if ($term->vid == $oss_taxonomy->id) {
+          $field->newValue(html_entity_decode($term->name, ENT_QUOTES, 'UTF-8'), TRUE);
+        }
+      }
+    }
+  }
+
+
+  $document->newField('lang')->newValue(html_entity_decode($resultdoc->language, ENT_QUOTES, 'UTF-8'), TRUE);
+  $document->newField('type')->newValue(html_entity_decode($resultdoc->type, ENT_QUOTES, 'UTF-8'), TRUE);
+  $document->newField('title')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), TRUE);
+  $document->newField('content')->newValue(html_entity_decode($resultdoc->body, ENT_QUOTES, 'UTF-8'), TRUE);
+  $document->newField('autocomplete')->newValue(html_entity_decode($resultdoc->body, ENT_QUOTES, 'UTF-8'), TRUE);
+  $document->newField('autocomplete')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), TRUE);
+  $document->newField('url', get_url_alise($resultdoc->nid));
+  $user_url = drupal_get_path_alias('user/' . $resultdoc->uid);
+  $user=user_load($resultdoc->uid);
+  $document->newField('timestamp', $resultdoc->timestamp);
+  $document->newField('user_name', $user->name);
+  $document->newField('user_email', $user->mail);
+  $document->newField('user_url', url($user_url , array('absolute' => TRUE)));
   return $document;
 }
 
 /**
  * Generate documents for indexing.
  */
-
 function generate_documents_to_index() {
   global $language;
   $limit = 100;
@@ -817,30 +742,27 @@ function generate_documents_to_index() {
   }
   $settings = get_settings_query();
   $server_settings = db_fetch_object($settings);
-  $types = get_drupal_types();
-  while ($type = db_fetch_object($types)) {
-    if ($type->enabled == 1) {
-      $current_type_count = db_result(get_total_result($type->type));
-
-      if($current_type_count >100) {
-        for ($i = 0; $i <= $current_type_count; $i++) {
-          if ($i != 0) {
-            $i = $j + 1;
-          }
-          $j = $i + $limit;
-          $index = iterate_the_documents($i , $limit, $language, $server_settings, $type);
-          opensearchserver_start_indexing($index, $server_settings);
-          watchdog('OpenSearchSerevr',$i. ' documents indexed');
+  foreach (get_drupal_types() as $type) {
+    $current_type_count = db_result(get_total_result($type->type));
+    if($current_type_count >100) {
+      for ($i = 0; $i <= $current_type_count; $i++) {
+        if ($i != 0) {
+          $i = $j + 1;
         }
-      }
-      else{
-        $index = iterate_the_documents(0 , $current_type_count, $language, $server_settings, $type);
+        $j = $i + $limit;
+        $index = iterate_the_documents($i , $limit, $language, $server_settings, $type);
         opensearchserver_start_indexing($index, $server_settings);
-        watchdog('OpenSearchSerevr',$current_type_count. ' documents indexed');
+        watchdog('OpenSearchSerevr',$i. ' documents indexed');
       }
+    }
+    else{
+      $index = iterate_the_documents(0 , $current_type_count, $language, $server_settings, $type);
+      opensearchserver_start_indexing($index, $server_settings);
+      watchdog('OpenSearchSerevr',$current_type_count. ' documents indexed');
     }
   }
 }
+
 /*
  * Iterate over the documents
 */

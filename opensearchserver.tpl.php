@@ -43,20 +43,21 @@
       </ul>
       </div>
       <br/>
+  <?php foreach (get_drupal_categories() as $oss_taxonomy) { ?>
       <div class="oss-facet-type">
-      <?php print check_plain(t('Categories'));?>
+      <?php print check_plain(t($oss_taxonomy->categories));?>
       <ul>
       <?php
       print $opensearchserver_data['print_facet_everything'];
-      foreach ($opensearchserver_data['oss_result_facet']->getFacet('taxonomy') as $categories) {
+      foreach ($opensearchserver_data['oss_result_facet']->getFacet('taxo_'.$oss_taxonomy->id) as $categories) {
         ?>
         <li>
         <?php
-        print check_same_filter($opensearchserver_data['tq'] , $categories['name']) ? '<b>':'';
+        print check_same_filter($opensearchserver_data['t'.$oss_taxonomy->id] , $categories['name']) ? '<b>':'';
         ?>
-        <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&tq=' , $categories['name']);?>"> <?php print drupal_ucfirst(check_plain($categories['name'])) . '(' .  $categories . ')';?> </a>
+        <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&t'.$oss_taxonomy->id.'=' , $categories['name']);?>"> <?php print drupal_ucfirst(check_plain($categories['name'])) . '(' .  $categories . ')';?> </a>
         <?php
-        print check_same_filter($opensearchserver_data['tq'] , $categories['name']) ? '</b>':'';
+        print check_same_filter($opensearchserver_data['t'.$oss_taxonomy->id] , $categories['name']) ? '</b>':'';
         ?>
         </li>
         <?php
@@ -65,6 +66,9 @@
       </ul>
       </div>
       <br/>
+      <?php
+      }
+      ?>
       <div class="oss-facet-type">
       <?php
       if ($opensearchserver_data['date_filter']) {
