@@ -163,8 +163,14 @@ function opensearchserver_schema() {
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
-      )
-    ),
+      ),
+      'customfields' => array(
+        'description' => t('The custom fields to index.'),
+        'type' => 'varchar',
+        'length' => '2048',
+        'not null' => FALSE,
+      ),
+    )
   );
 
   $schema['opensearchserver_categories'] = array(
@@ -191,4 +197,11 @@ function opensearchserver_schema() {
     ),
   );
   return $schema;
+}
+
+function opensearchserver_update_6000() {
+  $ret = array();
+  db_add_field($ret, 'opensearchserver_type', 'customfields',
+  array('type' => 'varchar', 'length' => '2048', 'not null' => FALSE));
+  return $ret;
 }

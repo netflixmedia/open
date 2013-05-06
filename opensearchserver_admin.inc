@@ -3,65 +3,67 @@
  * @file
  * Setting upda OpeenSearchServer admin setting
  */
-function get_settings_query() {
+
+$opensearchserver_cache = array();
+
+function opensearchserver_get_settings() {
+  global $opensearchserver_cache;
+  if (isset($opensearchserver_cache['settings'])) {
+    return $opensearchserver_cache['settings'];
+  }
   $query = <<<SQL
-    SELECT `serverurl`,
-    `indexname`,
-    `username`,
-    `key`,
-    `last_indexed`,
-    `delay`,
-    `filter_enabled`,
-    `signature`,
-    `title_snippet`,
-    `content_snippet`,
-    `url_snippet`,
-    `date`,
-    `date_filter`,
-    `log_enable`,
-    `noresult_filter_enable`,
-    `enable_language_filter`,
-    `block_text`,
-    `autocomplete_index`,
-    `autocomplete_query`
-    FROM {opensearchserver}
+    SELECT *  FROM {opensearchserver}
 SQL;
-  return db_query($query);
+  $stmt = db_query($query);
+  $res = db_fetch_object($stmt);
+  $opensearchserver_cache['settings'] = $res;
+  return $res;
 }
 
 /**
  * Getting Drupal field types from database
  */
 
-function get_drupal_types() {
-  global $oss_types;
-  if (isset($oss_types)) {
-    return $oss_types;
+function opensearchserver_get_drupal_types() {
+  global $opensearchserver_cache;
+  if (isset($opensearchserver_cache['types'])) {
+    return $opensearchserver_cache['types'];
   }
+  $cck_fields = content_fields();
   $query_type = <<<SQL
     SELECT DISTINCT
     type,
     name,
-    enabled
+    enabled,
+    customfields
     FROM {opensearchserver_type}
 SQL;
   $stmt = db_query($query_type);
   $oss_types = array();
   while ($oss_type = db_fetch_object($stmt)) {
     if ($oss_type->enabled == 1) {
-      $oss_types[$oss_type->type] = $oss_type;
+      $cck_array = array();
+      foreach (explode('|',$oss_type->customfields) as $custom_field) {
+        $cck_field = $cck_fields[$custom_field];
+        if (isset($cck_field) && $cck_field != null) {
+          $cck_array[$custom_field] = $cck_field;
+        }
+      }
+      $oss_types[$oss_type->type] = array('oss' => $oss_type, 'cck' => $cck_array);
     }
   }
+  $opensearchserver_cache['types'] = $oss_types;
   return $oss_types;
 }
+
 /**
  * Getting Drupal field types from database
  */
 
-function get_drupal_categories() {
-  global $oss_taxonomies;
-  if (isset($oss_taxonomies)) {
-    return $oss_taxonomies;
+function opensearchserver_get_drupal_categories() {
+  global $opensearchserver_cache;
+  if (isset($opensearchserver_cache['category'])) {
+    return $opensearchserver_cache['category'];
   }
   $query_categories = <<<SQL
     SELECT
@@ -79,6 +81,7 @@ SQL;
       $oss_taxonomies[$oss_taxonomy->categories] = $oss_taxonomy;
     }
   }
+  $opensearchserver_cache['category'] = $oss_taxonomies;
   return $oss_taxonomies;
 }
 
@@ -142,7 +145,7 @@ function opensearchserver_admin() {
 
   //Get the OpenSearchServer url, indexname, username, keyGet the OpenSearchServer url, indexname, username, key.
 
-  $settings = db_fetch_object(get_settings_query());
+  $settings = opensearchserver_get_settings();
   $form['details']['serverurl'] = array(
     '#type'  => 'textfield',
     '#title'  => t('OpenSearchServer Location'),
@@ -181,12 +184,21 @@ function opensearchserver_admin() {
   );
 
   /* Load type from OSS db */
-  $oss_types = get_drupal_types();
+  $oss_types = opensearchserver_get_drupal_types();
   foreach (node_get_types() as $drupal_type) {
     $form['fields']['type_'.$drupal_type->type] = array(
       '#type' => 'checkbox',
       '#title' => check_plain($drupal_type->name),
       '#default_value' => check_plain(array_key_exists($drupal_type->type, $oss_types) ? 1 : 0),
+    );
+  }
+
+  foreach ($oss_types as $oss_type) {
+    $form['fields']['typecustoms_'.$oss_type['oss']->type] = array(
+      '#type'  => 'textfield',
+      '#title'  => 'Custom fields for '.$oss_type['oss']->name,
+      '#description'  => t('List of custom fields to index (separated by pipe)'),
+      '#default_value' => $oss_type['oss']->customfields,
     );
   }
 
@@ -228,7 +240,7 @@ function opensearchserver_admin() {
   );
 
   /* Load taxonomies from OSS db */
-  $oss_taxonomies = get_drupal_categories();
+  $oss_taxonomies = opensearchserver_get_drupal_categories();
   foreach (taxonomy_get_vocabularies() as $vocabulary) {
     $form['categories']['taxo_'.$voc_name = str_replace(' ', '_', $vocabulary->name)] = array(
       '#type' => 'checkbox',
@@ -308,7 +320,7 @@ function opensearchserver_admin() {
  */
 
 function opensearchserver_page_form() {
-  $settings = db_fetch_object(get_settings_query());
+  $settings = opensearchserver_get_settings();
   $arg = arg(NULL, $_GET['q']);
   if ($arg[2] != NULL) {
     $value = $arg[2];
@@ -370,7 +382,7 @@ function opensearchserver_admin_validate($form_id, &$form_state) {
  * Getting OpenSearchServer API instance
  */
 
-function get_oss_api($serverurl, $username, $key, $indexname) {
+function opensearchserver_get_oss_api($serverurl, $username, $key, $indexname) {
   if ($indexname) {
     $oss_api = new OssApi($serverurl, $indexname);
   }
@@ -385,8 +397,8 @@ function get_oss_api($serverurl, $username, $key, $indexname) {
  * Creating an index in OpenSearchServer instance
  */
 
-function create_index($serverurl, $indexname, $username, $key) {
-  $oss_api = get_oss_api($serverurl, $username, $key, '');
+function opensearchserver_create_index($serverurl, $indexname, $username, $key) {
+  $oss_api = opensearchserver_get_oss_api($serverurl, $username, $key, '');
   $oss_api->createIndex($indexname);
   return TRUE;
 }
@@ -395,18 +407,10 @@ function create_index($serverurl, $indexname, $username, $key) {
  * Delete all documents from the index.
  */
 
-function delete_all() {
-  $delete_query = <<<SQL
-    SELECT serverurl,
-    `indexname`,
-    `username`,
-    `key`
-    FROM {opensearchserver}
-SQL;
-  $get_server_details = db_query($delete_query);
-  $server_details = db_fetch_object($get_server_details);
-  $delete_api = new OssDelete($server_details->serverurl, $server_details->indexname);
-  $delete_api->credential($server_details->username, $server_details->key);
+function opensearchserver_delete_all() {
+  $oss_settings = opensearchserver_get_settings();
+  $delete_api = new OssDelete($oss_settings->serverurl, $oss_settings->indexname);
+  $delete_api->credential($oss_settings->username, $oss_settings->key);
   $delete_api->delete('*:*');
 }
 /**
@@ -421,16 +425,16 @@ function opensearchserver_admin_submit($form_id, &$form_state) {
 
   switch ($form_state['clicked_button']['#name']) {
     case 'create':
-      create_index($serverurl, $indexname, $username, $key);
+      opensearchserver_create_index($serverurl, $indexname, $username, $key);
     case 'save':
-      opensearchserver_drupl_schema($serverurl, $indexname, $username,  $key);
-      insert_database_values($form_state, $serverurl, $indexname, $username, $key);
+      opensearchserver_drupal_schema($serverurl, $indexname, $username,  $key);
+      opensearchserver_insert_database_values($form_state, $serverurl, $indexname, $username, $key);
       break;
     case 'index':
-      delete_all();
+      opensearchserver_delete_all();
       $batch = array(
         'title' => t('Indexing the document'),
-        'operations' => array(array('generate_documents_to_index', array($info))),
+        'operations' => array(array('opensearchserver_generate_documents_to_index', array($info))),
       );
       batch_set($batch);
       batch_process('admin/settings/opensearchserver');
@@ -443,7 +447,7 @@ function opensearchserver_admin_submit($form_id, &$form_state) {
  * Truncate all the values from database
  */
 
-function truncate_db() {
+function opensearchserver_truncate_db() {
   db_query("
     TRUNCATE
     TABLE
@@ -464,8 +468,8 @@ function truncate_db() {
  * Inserting the settings value to database
  */
 
-function insert_database_values($form_state, $serverurl, $indexname, $username,  $key) {
-  truncate_db();
+function opensearchserver_insert_database_values($form_state, $serverurl, $indexname, $username,  $key) {
+  opensearchserver_truncate_db();
   db_query("
     INSERT INTO `{opensearchserver}`
     (
@@ -516,15 +520,16 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
       INSERT INTO
       `{opensearchserver_type}`
       (
-      `type`, `name`, `enabled`
+      `type`, `name`, `enabled`, `customfields`
       )
       VALUES
       (
-      '%s', '%s', '%d'
+      '%s', '%s', '%d', '%s'
       )",
       $type->type,
       $type->name,
-      $form_state['values']['type_'.$type->type]
+      $form_state['values']['type_'.$type->type],
+      $form_state['values']['typecustoms_'.$type->type]
     );
   }
 
@@ -544,20 +549,44 @@ function insert_database_values($form_state, $serverurl, $indexname, $username, 
   drupal_set_message(t('Settings has been Updated'));
 }
 
+function opensearchserver_get_field_name($oss_type, $cck_field) {
+  return 'type_'.$oss_type['oss']->type.'_'.$cck_field['field_name'];
+
+}
 /**
  * Implements the field creation on schema of OpenSearchServer.
  */
 
-function opensearchserver_drupl_schema($url,  $indexname,  $username,  $key) {
-  $snippet = get_settings_query();
-  $snippet_value = db_fetch_object($snippet);
-  $oss_api = get_oss_api($url, $username, $key, $indexname);
+function opensearchserver_drupal_schema($url,  $indexname,  $username,  $key) {
+  $settings = opensearchserver_get_settings();
+  $oss_api = opensearchserver_get_oss_api($url, $username, $key, $indexname);
   $oss_api->setField('id', '', 'NO', 'YES', 'NO', 'NO', 'YES');
   $oss_api->setField('lang', '', 'NO', 'YES', 'NO', 'NO', 'NO');
   $oss_api->setField('type', '', 'NO', 'YES', 'NO', 'NO', 'NO');
-  foreach (get_drupal_categories() as $oss_taxonomy) {
+  foreach (opensearchserver_get_drupal_categories() as $oss_taxonomy) {
     $oss_api->setField('taxo_'.$oss_taxonomy->id, '', 'NO', 'YES', 'NO', 'NO', 'NO');
   }
+
+  // Set fields from CCK
+  foreach (opensearchserver_get_drupal_types() as $oss_type) {
+    if ($oss_type['oss']->enabled) {
+      foreach ($oss_type['cck'] as $cck_field) {
+        switch ($cck_field['type']) {
+          case 'text':
+            $analyzer = 'TextAnalyzer';
+            break;
+          case 'number_decimal':
+            $analyzer = 'DecimalAnalyzer';
+            break;
+          default:
+            $analyzer = '';
+            break;
+        }
+        $oss_api->setField(opensearchserver_get_field_name($oss_type, $cck_field), $analyzer, 'YES', 'YES', 'NO', 'NO', 'NO');
+      }
+    }
+  }
+
   $oss_api->setField('content_timestamp', '', 'NO', 'YES', 'NO', 'NO', 'NO');
   $oss_api->setField('url', '', 'NO', 'YES', 'NO', 'NO', 'NO');
   $oss_api->setField('title', 'TextAnalyzer', 'NO', 'YES', 'positions_offsets', 'NO', 'NO');
@@ -569,20 +598,22 @@ function opensearchserver_drupl_schema($url,  $indexname,  $username,  $key) {
   $oss_api->setField('user_name', 'TextAnalyzer', 'NO', 'YES', 'positions_offsets', 'NO', 'NO');
   $oss_api->setField('user_email', 'TextAnalyzer', 'NO', 'YES', 'positions_offsets', 'NO', 'NO');
   $oss_api->setField('user_url', '', 'NO', 'YES', 'NO', 'NO', 'NO');
+  $oss_api->setField('full', 'TextAnalyzer', 'NO', 'YES', 'positions_offsets', 'NO', 'NO');
+  $oss_api->setField('full_exact', 'StandardAnalyzer', 'NO', 'YES', 'positions_offsets', 'NO', 'NO');
   $search_template=new OssSearchTemplate($url, $indexname);
   $search_template->credential($username, $key);
   $search_template->createSearchTemplate('search', '
-    title:($$)^10 OR title:("$$")^10 OR
-    content:($$)^1 OR content:("$$")^1 OR
+    title:($$)^10 OR title:("$$")^10 OR content:($$)^2 OR content:("$$")^2 OR
+    full:($$) OR full:("$$") OR full_exact:($$) OR full_exact:("$$") OR
     comments_subject:($$)^0.2 OR comments_subject:("$$")^0.2 OR
     comments_comment:($$)^0.1 OR comments_comment:("$$")^0.1',
     "AND", "10", "2", "ENGLISH");
-  $search_template->setSnippetField('search', "title", $snippet_value->title_snippet, "b", "1", "NoFragmenter");
-  $search_template->setSnippetField('search', "content", $snippet_value->content_snippet, "b", "1", "SentenceFragmenter");
+  $search_template->setSnippetField('search', "title", $settings->title_snippet, "b", "1", "NoFragmenter");
+  $search_template->setSnippetField('search', "content", $settings->content_snippet, "b", "1", "SentenceFragmenter");
   $search_template->setReturnField('search', "url");
   $search_template->setReturnField('search', "user_url");
   $search_template->setReturnField('search', "type");
-  foreach (get_drupal_categories() as $oss_taxonomy) {
+  foreach (opensearchserver_get_drupal_categories() as $oss_taxonomy) {
     $search_template->setReturnField('search', 'taxo_'.$oss_taxonomy->id);
   }
   $search_template->setReturnField('search', "lang");
@@ -595,7 +626,7 @@ function opensearchserver_drupl_schema($url,  $indexname,  $username,  $key) {
 /**
  * Get total documents from db
  */
-function get_total_result($type) {
+function opensearchserver_get_total_result($type) {
   $count_result_query=<<<SQL
     SELECT
     COUNT(*) FROM
@@ -609,45 +640,20 @@ SQL;
 /**
  * Generate SQL query to get all the documents
  */
-function get_allpagest_db($create_date) {
-  if ($create_date="createddate") {
+function opensearchserver_get_allpagest_db($createddate) {
+  if ($createddate) {
     $sql = <<<SQL
-      SELECT
-      node.type,
-      node.nid,
-      node.comment,
-      node.status,
-      node.created,
-      node.language,
-      node_revisions.uid,
-      node_revisions.title,
-      node_revisions.body,
-      node_revisions.timestamp
-      FROM {node}, {node_revisions}
-      WHERE
-      node.nid = node_revisions.nid
-      AND
-      node.type LIKE '%s' LIMIT %d, %d
+      SELECT node.nid
+      FROM {node}
+      WHERE node.type = '%s' AND node.status = %d
+      LIMIT %d, %d
 SQL;
-  }
-  else {
+  } else {
     $sql = <<<SQL
-    SELECT
-    node.type,
-    node.nid,
-    node.comment,
-    node.status,
-    node.changed,
-    node.language,
-    node_revisions.uid,
-    node_revisions.title,
-    node_revisions.body,
-    node_revisions.timestamp
-    FROM {node}, {node_revisions}
-    WHERE
-    node.nid = node_revisions.nid
-    AND
-    node.type LIKE '%s' LIMIT %d, %d
+    SELECT node.nid,
+    FROM {node}
+    WHERE node.type = '%s' AND node.status = %d
+    LIMIT %d, %d
 SQL;
   }
   return $sql;
@@ -657,7 +663,7 @@ SQL;
 /*
  * Get url alise if available
 */
-function get_url_alise($nid) {
+function opensearchserver_get_url_alias($nid) {
   $urlalise = db_query("
     SELECT dst
     FROM
@@ -692,19 +698,19 @@ function get_url_alise($nid) {
  * Creating documents for index
  */
 
-function create_index_document($document, $resultdoc , $language) {
+function opensearchserver_create_index_document($document, $nid , $language, $createddate, $oss_type) {
   global $base_url;
-  $node = node_load($resultdoc->nid);
-  $document->newField('id', $resultdoc->type . '_' . $resultdoc->nid);
-  if ($resultdoc->created) {
-    $document->newField('content_timestamp', date('YmdHis', $resultdoc->created));
-  }
-  else {
-    $document->newField('content_timestamp', date('YmdHis', $resultdoc->changed));
+  $node = node_load($nid);
+  $document->newField('id', $node->type . '_' . $node->nid);
+  if ($createddate) {
+    $document->newField('content_timestamp', date('YmdHis', $node->created));
+  } else {
+    $document->newField('content_timestamp', date('YmdHis', $node->changed));
   }
 
+  // Load taxonomy
   if (!empty($node->taxonomy)) {
-    foreach (get_drupal_categories() as $oss_taxonomy) {
+    foreach (opensearchserver_get_drupal_categories() as $oss_taxonomy) {
       $field = $document->newField('taxo_'.$oss_taxonomy->id);
       foreach ($node->taxonomy as $term) {
         if ($term->vid == $oss_taxonomy->id) {
@@ -714,51 +720,66 @@ function create_index_document($document, $resultdoc , $language) {
     }
   }
 
-
-  $document->newField('lang')->newValue(html_entity_decode($resultdoc->language, ENT_QUOTES, 'UTF-8'), TRUE);
-  $document->newField('type')->newValue(html_entity_decode($resultdoc->type, ENT_QUOTES, 'UTF-8'), TRUE);
-  $document->newField('title')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), TRUE);
-  $document->newField('content')->newValue(html_entity_decode($resultdoc->body, ENT_QUOTES, 'UTF-8'), TRUE);
-  $document->newField('autocomplete')->newValue(html_entity_decode($resultdoc->body, ENT_QUOTES, 'UTF-8'), TRUE);
-  $document->newField('autocomplete')->newValue(html_entity_decode($resultdoc->title, ENT_QUOTES, 'UTF-8'), TRUE);
-  $document->newField('url', get_url_alise($resultdoc->nid));
-  $user_url = drupal_get_path_alias('user/' . $resultdoc->uid);
-  $user=user_load($resultdoc->uid);
-  $document->newField('timestamp', $resultdoc->timestamp);
+  $document->newField('lang')->newValue(html_entity_decode($node->language, ENT_QUOTES, 'UTF-8'), TRUE);
+  $document->newField('type')->newValue(html_entity_decode($node->type, ENT_QUOTES, 'UTF-8'), TRUE);
+  $title = html_entity_decode($node->title, ENT_QUOTES, 'UTF-8');
+  $document->newField('title')->newValue($title, TRUE);
+  $document->newField('full')->newValue($title, TRUE);
+  $document->newField('full_exact')->newValue($title, TRUE);
+  $content = html_entity_decode($node->body, ENT_QUOTES, 'UTF-8');
+  $document->newField('content')->newValue($content, TRUE);
+  $document->newField('full')->newValue($content, TRUE);
+  $document->newField('full_exact')->newValue($content, TRUE);
+  $document->newField('autocomplete')->newValue(html_entity_decode($node->body, ENT_QUOTES, 'UTF-8'), TRUE);
+  $document->newField('autocomplete')->newValue(html_entity_decode($node->title, ENT_QUOTES, 'UTF-8'), TRUE);
+  $document->newField('url', opensearchserver_get_url_alias($node->nid));
+  $document->newField('timestamp', $node->revision_timestamp);
+  $user_url = drupal_get_path_alias('user/' . $node->uid);
+  $user = user_load($node->uid);
   $document->newField('user_name', $user->name);
   $document->newField('user_email', $user->mail);
   $document->newField('user_url', url($user_url , array('absolute' => TRUE)));
+
+  // Load custom fields
+  foreach ($oss_type['cck'] as $cck_field) {
+    $oss_field_name = opensearchserver_get_field_name($oss_type, $cck_field);
+    foreach ($node->$cck_field['field_name'] as $field_value) {
+      $value = html_entity_decode($field_value['value'], ENT_QUOTES, 'UTF-8');
+      $document->newField($oss_field_name)->newValue($value, TRUE);
+      $document->newField('full')->newValue($value, TRUE);
+      $document->newField('full_exact')->newValue($value, TRUE);
+    }
+  }
+
   return $document;
 }
 
 /**
  * Generate documents for indexing.
  */
-function generate_documents_to_index() {
+function opensearchserver_generate_documents_to_index() {
   global $language;
   $limit = 100;
   if (!isset($langcode)) {
     $langcode = $GLOBALS['language_content']->language;
   }
-  $settings = get_settings_query();
-  $server_settings = db_fetch_object($settings);
-  foreach (get_drupal_types() as $type) {
-    $current_type_count = db_result(get_total_result($type->type));
+  foreach (opensearchserver_get_drupal_types() as $oss_type) {
+    $current_type_count = db_result(opensearchserver_get_total_result($oss_type['oss']->type));
     if($current_type_count >100) {
       for ($i = 0; $i <= $current_type_count; $i++) {
         if ($i != 0) {
           $i = $j + 1;
         }
         $j = $i + $limit;
-        $index = iterate_the_documents($i , $limit, $language, $server_settings, $type);
-        opensearchserver_start_indexing($index, $server_settings);
-        watchdog('OpenSearchSerevr',$i. ' documents indexed');
+        $index = opensearchserver_iterate_the_documents($i , $limit, $language, $oss_type);
+        opensearchserver_start_indexing($index);
+        watchdog('OpenSearchServer',$i. ' documents indexed');
       }
     }
     else{
-      $index = iterate_the_documents(0 , $current_type_count, $language, $server_settings, $type);
-      opensearchserver_start_indexing($index, $server_settings);
-      watchdog('OpenSearchSerevr',$current_type_count. ' documents indexed');
+      $index = opensearchserver_iterate_the_documents(0 , $current_type_count, $language, $oss_type);
+      opensearchserver_start_indexing($index);
+      watchdog('OpenSearchServer',$current_type_count. ' documents indexed');
     }
   }
 }
@@ -766,17 +787,15 @@ function generate_documents_to_index() {
 /*
  * Iterate over the documents
 */
-function iterate_the_documents($from, $limit, $language, $server_settings, $type) {
-
-  $sql = get_allpagest_db($server_settings->date);
-  $result = db_query($sql, $type->type, $from, $limit);
+function opensearchserver_iterate_the_documents($from, $limit, $language, $oss_type) {
+  $createddate = opensearchserver_get_settings()->date == "createddate";
+  $sql = opensearchserver_get_allpagest_db($createddate);
+  $result = db_query($sql, $oss_type['oss']->type, 1, $from, $limit);
 
   $index = new OssIndexDocument();
   while ($resultdoc = db_fetch_object($result)) {
-    if ($resultdoc->status == 1) {
-      $document = $index->newDocument($language->language);
-      create_index_document($document, $resultdoc, $language->language);
-    }
+    $document = $index->newDocument($language->language);
+    opensearchserver_create_index_document($document, $resultdoc->nid, $language->language, $createddate, $oss_type);
   }
   return $index;
 }
@@ -785,7 +804,7 @@ function iterate_the_documents($from, $limit, $language, $server_settings, $type
  * Generate comment documents for indexing.
  */
 
-function get_comment_documents($resultdoc) {
+function opensearchserver_get_comment_documents($resultdoc) {
   if ($resultdoc->comment > 0) {
     $comments = db_query("
       SELECT
@@ -809,7 +828,7 @@ function get_comment_documents($resultdoc) {
       $document->newField('user_email', $user->mail);
       $user_url = drupal_get_path_alias('user/' . $resultdoc->uid);
       $document->newField('user_url', url($user_url , array('absolute' => TRUE)));
-      opensearchserver_start_indexing($index, $server_details);
+      opensearchserver_start_indexing($index);
     }
   }
 }
@@ -817,10 +836,11 @@ function get_comment_documents($resultdoc) {
  * Start indexing process
  */
 
-function opensearchserver_start_indexing($index, $server_details) {
-  $server = new OssApi($server_details->serverurl, $server_details->indexname);
-  $server->credential($server_details->username, $server_details->key);
-  if ($server->update($index, $server_details->indexname) === FALSE) {
+function opensearchserver_start_indexing($index) {
+  $oss_settings = opensearchserver_get_settings();
+  $server = new OssApi($oss_settings->serverurl, $oss_settings->indexname);
+  $server->credential($oss_settings->username, $oss_settings->key);
+  if ($server->update($index, $oss_settings->indexname) === FALSE) {
     $errors[] = 'Failed to update';
   }
   $server->optimize();

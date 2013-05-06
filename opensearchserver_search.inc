@@ -110,8 +110,8 @@ function opensearchserver_search() {
   $ts = isset($_REQUEST['ts']) ? $_REQUEST['ts'] : NULL;
   $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
   $opensearchserver_data['q'] = $arg[2];
-  $result=opensearchserver_get_search_result($arg[2], TRUE);
-  $result_facet=opensearchserver_get_search_result($arg[2], FALSE);
+  $result = opensearchserver_get_search_result($arg[2], TRUE);
+  $result_facet = opensearchserver_get_search_result($arg[2], FALSE);
   if (isset($result) && $result instanceof SimpleXMLElement && isset($result_facet) && $result_facet instanceof SimpleXMLElement) {
     $opensearchserver_data['paging']=opensearchserver_paging($result);
     $timestamp_array = array("past24" => "Past 24 hours", "pastweek" => "Past week", "pastmonth" => "Past month", "pastyear" => "Past year");
@@ -130,24 +130,16 @@ function opensearchserver_search() {
     $opensearchserver_data['url_snippet'] = $search_settings->url_snippet;
     $opensearchserver_data['time_stamp'] = $timestamp_array;
     $opensearchserver_data['enable_language_filter'] = $search_settings->enable_language_filter;
-    $opensearchserver_data['oss_result'] = get_search_result($result);
-    $opensearchserver_data['oss_result_facet'] = get_search_result($result_facet);
-    $opensearchserver_data['result_time'] = get_result_time($opensearchserver_data['result']);
-    $opensearchserver_data['filter_result'] = get_filter_result($arg[2], $opensearchserver_data['oss_result'], $opensearchserver_data['filter_enabled'], $opensearchserver_data['block_text'] , $opensearchserver_data['no_filter']);
-    $opensearchserver_data['facet_everything'] = get_facet_everything($opensearchserver_data['fq'], $opensearchserver_data['tq'], $opensearchserver_data['ts'], $opensearchserver_data['oss_result_facet'], $opensearchserver_data['oss_result']);
-    $opensearchserver_data['print_facet_everything'] = generate_facet_everything($opensearchserver_data['facet_everything'], $opensearchserver_data['q']);
+    $opensearchserver_data['oss_result'] = new OssResults($result, FALSE);
+    $opensearchserver_data['oss_result_facet'] = new OssResults($result_facet, FALSE);
+    $opensearchserver_data['result_time'] = opensearchserver_get_result_time($opensearchserver_data['result']);
+    $opensearchserver_data['filter_result'] = opensearchserver_get_filter_result($arg[2], $opensearchserver_data['oss_result'], $opensearchserver_data['filter_enabled'], $opensearchserver_data['block_text'] , $opensearchserver_data['no_filter']);
+    $opensearchserver_data['facet_everything'] = opensearchserver_get_facet_everything($opensearchserver_data['fq'], $opensearchserver_data['tq'], $opensearchserver_data['ts'], $opensearchserver_data['oss_result_facet'], $opensearchserver_data['oss_result']);
+    $opensearchserver_data['print_facet_everything'] = opensearchserver_generate_facet_everything($opensearchserver_data['facet_everything'], $opensearchserver_data['q']);
   }
   $opensearchserver_data['form'] = drupal_get_form('opensearchserver_page_form');
   return theme('opensearchserver_search', $opensearchserver_data);
 
-}
-
-
-/**
- * Get search result object
- */
-function get_search_result($result) {
-  return new OssResults($result, FALSE);
 }
 
 /**
@@ -206,13 +198,13 @@ function opensearchserver_create_url_snippet($url, $end) {
 /**
  * Get the maximum value .
  */
-function get_max($oss_result) {
+function opensearchserver_get_max($oss_result) {
   return ($oss_result->getResultStart() + $oss_result->getResultRows() > $oss_result->getResultFound()) ? $oss_result->getResultFound() : $oss_result->getResultStart() + $oss_result->getResultRows();
 }
 /**
  * Get the search result from the index.
  */
-function get_result_time($result) {
+function opensearchserver_get_result_time($result) {
   return (float)$result->result['time'] / 1000;
 }
 /**
@@ -222,13 +214,7 @@ function get_result_time($result) {
 function opensearchserver_get_search_result($query, $facet) {
   if ($query) {
     global $user;
-    $get_details = db_query("
-      SELECT `serverurl`,
-      `indexname`,`username`,
-      `key`,`log_enable`,`enable_language_filter`
-      FROM {opensearchserver}"
-    );
-    $server_details = db_fetch_object($get_details);
+    $oss_settings = opensearchserver_get_settings();
     $start = isset($_REQUEST['p']) ? $_REQUEST['p'] : NULL;
     $start = isset($start) ? max(0, $start - 1) * 10 : 0;
     $escapechars = array('\\', '^', '~', ':', '(', ')', '{', '}', '[', ']' , '&&', '||', '!', '*', '?');
@@ -236,9 +222,9 @@ function opensearchserver_get_search_result($query, $facet) {
       $query = str_replace($escchar, ' ', $query);
     }
     $query = trim($query);
-    $search = new OssSearch($server_details->serverurl, $server_details->indexname, 10, $start);
-    $search->credential($server_details->username, $server_details->key);
-    if ($server_details->log_enable) {
+    $search = new OssSearch($oss_settings->serverurl, $oss_settings->indexname, 10, $start);
+    $search->credential($oss_settings->username, $oss_settings->key);
+    if ($oss_settings->log_enable) {
       $search->setLog(TRUE);
       $search->setCustomLog(1, session_id());
       if ( $user->uid ) {
@@ -250,7 +236,7 @@ function opensearchserver_get_search_result($query, $facet) {
       $search->setCustomLog (3, $_SERVER['REMOTE_ADDR']);
     }
     $search->facet('type', 1);
-    foreach (get_drupal_categories() as $oss_taxonomy) {
+    foreach (opensearchserver_get_drupal_categories() as $oss_taxonomy) {
       $search->facet('taxo_'.$oss_taxonomy->id, 1, true);
     }
     $search->facet('lang', 0);
@@ -259,13 +245,13 @@ function opensearchserver_get_search_result($query, $facet) {
       if ($filter && $filter != 'All') {
         $search->filter('type:"' . $filter . '"');
       }
-      if ($server_details->enable_language_filter) {
+      if ($oss_settings->enable_language_filter) {
         $lang_filter=$_REQUEST['lq'];
         if ($lang_filter && $lang_filter != 'All') {
           $search->filter('lang:"' . $lang_filter . '"');
         }
       }
-      foreach (get_drupal_categories() as $oss_taxonomy) {
+      foreach (opensearchserver_get_drupal_categories() as $oss_taxonomy) {
         $filter_categories=$_REQUEST['t'.$oss_taxonomy->id];
         if ($filter_categories && $filter_categories != 'All') {
           $search->filter('taxo_'.$oss_taxonomy->id.':"' . $filter_categories . '"');
@@ -302,12 +288,12 @@ function opensearchserver_page_form_submit($form_id, &$form_state) {
   $form_state['redirect'] = array('opensearchserver/search/'. check_plain($form_state['values']['q']), 'lq='.$language->language);
 }
 
-function generate_facet_everything($facet_everything, $query) {
+function opensearchserver_generate_facet_everything($facet_everything, $query) {
   if ($facet_everything) {
-    $output = '<li><b>'. generate_url_everything($query) .'</b></li>';
+    $output = '<li><b>'. opensearchserver_generate_url_everything($query) .'</b></li>';
   }
   else {
-    $output = '<li>'. generate_url_everything($query) .'</li>';
+    $output = '<li>'. opensearchserver_generate_url_everything($query) .'</li>';
   }
   return $output;
 }
@@ -316,7 +302,7 @@ function generate_facet_everything($facet_everything, $query) {
  * Generate url for everything in facet
  */
 
-function generate_url_everything($query) {
+function opensearchserver_generate_url_everything($query) {
   $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
   $url = '?' . drupal_urlencode($query) . '&lq=' . $lq;
   return '<a id="oss_facet" href="'. $url .'"> Everything</a>';
@@ -326,7 +312,7 @@ function generate_url_everything($query) {
  * Check the filter result is available or not
  */
 
-function get_filter_result($search_query, $oss_result, $filter_enabled , $block_text, $no_filter) {
+function opensearchserver_get_filter_result($search_query, $oss_result, $filter_enabled , $block_text, $no_filter) {
   $check_filter_enabled = $filter_enabled == 1 && $search_query != $block_text;
   $check_filter_at_zero_result = $oss_result->getResultFound() <= 0 && $no_filter == 1;
   if ($check_filter_enabled && $check_filter_at_zero_result) {
@@ -346,7 +332,7 @@ function get_filter_result($search_query, $oss_result, $filter_enabled , $block_
  * Generate the filter for everything.
  */
 
-function get_facet_everything($facet_fq, $facet_tq, $facet_ts, $oss_result_facet, $oss_result) {
+function opensearchserver_get_facet_everything($facet_fq, $facet_tq, $facet_ts, $oss_result_facet, $oss_result) {
   $check_facet_available = $facet_fq == NULL && $facet_tq == NULL && $facet_ts == NULL &&  $oss_result_facet >= 0 ;
   $check_facet_available_atzero_result = $oss_result->getResultFound() <= 0 && $oss_result_facet <= 0;
   return ($check_facet_available || $check_facet_available_atzero_result) ? TRUE :FALSE ;
@@ -354,7 +340,7 @@ function get_facet_everything($facet_fq, $facet_tq, $facet_ts, $oss_result_facet
 /**
  * Get the native name of the language.
  */
-function get_local_facet($lang) {
+function opensearchserver_get_local_facet($lang) {
   $url_prefix = db_query("
     SELECT language,
     native,name
@@ -369,7 +355,7 @@ function get_local_facet($lang) {
 /**
  * Generate the filter for link
  */
-function generate_filter_link($q, $facet_name , $facet_value) {
+function opensearchserver_generate_filter_link($q, $facet_name , $facet_value) {
   $lq = isset($_REQUEST['lq']) ? $_REQUEST['lq'] : NULL;
   if ($facet_name != '&lq=') {
     return $base . drupal_urlencode($q) . $facet_name . drupal_urlencode($facet_value) . '&lq=' . $lq;
@@ -381,6 +367,6 @@ function generate_filter_link($q, $facet_name , $facet_value) {
  * Check the given facet is the same as you search.
  */
 
-function check_same_filter($fq, $value) {
+function opensearchserver_check_same_filter($fq, $value) {
   return ($fq == $value) ? TRUE : FALSE;
 }

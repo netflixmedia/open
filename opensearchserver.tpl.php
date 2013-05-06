@@ -16,7 +16,7 @@
     <div align="left">
     <?php print check_plain($opensearchserver_data['oss_result']->getResultFound()); ?> documents found (<?php print check_plain($opensearchserver_data['result_time']);?> seconds)
     </div>
-    <?php  $max = get_max($opensearchserver_data['oss_result']);
+    <?php  $max = opensearchserver_get_max($opensearchserver_data['oss_result']);
     }
     if ($opensearchserver_data['filter_result']) {
     ?>
@@ -30,11 +30,11 @@
         ?>
         <li>
         <?php
-        print check_same_filter($opensearchserver_data['fq'] , $values['name']) ? '<b>':'';
+        print opensearchserver_check_same_filter($opensearchserver_data['fq'] , $values['name']) ? '<b>':'';
         ?>
-        <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&fq=' , $values['name']);?>"> <?php print drupal_ucfirst(check_plain($values['name'])) . '(' .  $values . ')';?> </a>
+        <a href="<?php print opensearchserver_generate_filter_link($opensearchserver_data['q'] , '&fq=' , $values['name']);?>"> <?php print drupal_ucfirst(check_plain($values['name'])) . '(' .  $values . ')';?> </a>
         <?php
-        print check_same_filter($opensearchserver_data['fq'] , $values['name']) ? '</b>':'';
+        print opensearchserver_check_same_filter($opensearchserver_data['fq'] , $values['name']) ? '</b>':'';
         ?>
         </li>
         <?php
@@ -43,7 +43,7 @@
       </ul>
       </div>
       <br/>
-  <?php foreach (get_drupal_categories() as $oss_taxonomy) { ?>
+  <?php foreach (opensearchserver_get_drupal_categories() as $oss_taxonomy) { ?>
       <div class="oss-facet-type">
       <?php print check_plain(t($oss_taxonomy->categories));?>
       <ul>
@@ -53,11 +53,11 @@
         ?>
         <li>
         <?php
-        print check_same_filter($opensearchserver_data['t'.$oss_taxonomy->id] , $categories['name']) ? '<b>':'';
+        print opensearchserver_check_same_filter($opensearchserver_data['t'.$oss_taxonomy->id] , $categories['name']) ? '<b>':'';
         ?>
-        <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&t'.$oss_taxonomy->id.'=' , $categories['name']);?>"> <?php print drupal_ucfirst(check_plain($categories['name'])) . '(' .  $categories . ')';?> </a>
+        <a href="<?php print opensearchserver_generate_filter_link($opensearchserver_data['q'] , '&t'.$oss_taxonomy->id.'=' , $categories['name']);?>"> <?php print drupal_ucfirst(check_plain($categories['name'])) . '(' .  $categories . ')';?> </a>
         <?php
-        print check_same_filter($opensearchserver_data['t'.$oss_taxonomy->id] , $categories['name']) ? '</b>':'';
+        print opensearchserver_check_same_filter($opensearchserver_data['t'.$oss_taxonomy->id] , $categories['name']) ? '</b>':'';
         ?>
         </li>
         <?php
@@ -82,11 +82,11 @@
             ?>
             <li>
             <?php
-            print check_same_filter($opensearchserver_data['ts'] , $time_stamp) ? '<b>':'';
+            print opensearchserver_check_same_filter($opensearchserver_data['ts'] , $time_stamp) ? '<b>':'';
             ?>
             <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&ts=' , $time_stamp);?>"> <?php print drupal_ucfirst(check_plain($time_stamp));?> </a>
             <?php
-            print check_same_filter($opensearchserver_data['ts'] , $time_stamp) ? '</b>' : '';
+            print opensearchserver_check_same_filter($opensearchserver_data['ts'] , $time_stamp) ? '</b>' : '';
             ?>
             </li>
             <?php
@@ -108,11 +108,11 @@
           ?>
           <li>
           <?php
-          print check_same_filter($opensearchserver_data['lq'] , $language['name']) ? '<b>':'';
+          print opensearchserver_check_same_filter($opensearchserver_data['lq'] , $language['name']) ? '<b>':'';
           ?>
-          <a href="<?php print generate_filter_link($opensearchserver_data['q'] , '&lq=' , $language['name']);?>"> <?php print drupal_ucfirst(check_plain(get_local_facet($language['name']))) . '(' .  $language . ')';?> </a>
+          <a href="<?php print opensearchserver_generate_filter_link($opensearchserver_data['q'] , '&lq=' , $language['name']);?>"> <?php print drupal_ucfirst(check_plain(get_local_facet($language['name']))) . '(' .  $language . ')';?> </a>
           <?php
-          print check_same_filter($opensearchserver_data['lq'] , $language['name']) ? '</b>':'';
+          print opensearchserver_check_same_filter($opensearchserver_data['lq'] , $language['name']) ? '</b>':'';
           ?>
           </li>
           <?php

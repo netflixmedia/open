@@ -6,21 +6,15 @@
 
 function opensearchserver_autocomplete() {
   $query=isset($_REQUEST['query']) ? $_REQUEST['query'] : NULL;
-  $get_details = db_query("
-    SELECT `serverurl`,
-    `autocomplete_index`,`username`,
-    `key`,`autocomplete_query`
-    FROM {opensearchserver}"
-  );
-  $server_details = db_fetch_object($get_details);
+  $oss_settings = opensearchserver_get_settings();
   $escapechars = array('\\', '^', '~', ':', '(', ')', '{', '}', '[', ']' , '&&', '||', '!', '*', '?');
   foreach ($escapechars as $escchar) {
     $query = str_replace($escchar, ' ', $query);
   }
   $query = trim($query);
-  $search = new OssSearch($server_details->serverurl, $server_details->autocomplete_index, 10, 0);
-  $search->credential($server_details->username, $server_details->key);
-  $result = $search->query($query)->template($server_details->autocomplete_query)->execute(5);
+  $search = new OssSearch($oss_settings->serverurl, $oss_settings->autocomplete_index, 10, 0);
+  $search->credential($oss_settings->username, $oss_settings->key);
+  $result = $search->query($query)->template($oss_settings->autocomplete_query)->execute(5);
   if (isset($result) && $result instanceof SimpleXMLElement) {
     $results = new OSSResults($result);
     if ($results->getResultFound() == 0) {
